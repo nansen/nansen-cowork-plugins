@@ -1,0 +1,18 @@
+{
+  "name": "nansen-cowork-plugins",
+  "owner": {
+    "name": "Nansen"
+  },
+  "plugins": [
+    {
+      "name": "nansen-core",
+      "source": "./nansen-core",
+      "description": "Shared intelligence foundation for the Nansen team. Extract, structure, and sync domain knowledge to Google Drive. Includes /setup, /onboarding, and Market Research skill."
+    },
+    {
+      "name": "nansen-growth",
+      "source": "./nansen-growth",
+      "description": "Growth domain plugin for business development. Proactive industry research and solutions positioning that maps client needs to Nansen capabilities."
+    }
+  ]
+}
