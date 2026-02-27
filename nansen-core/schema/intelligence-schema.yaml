@@ -1,0 +1,100 @@
+# Nansen Intelligence File Schema
+# All intelligence files use YAML frontmatter + markdown body
+# This schema defines the required and optional frontmatter fields
+
+required_fields:
+  title:
+    type: string
+    description: Descriptive title summarizing the intelligence content
+    example: "Q1 2026 Digital Transformation Trends from Acme Strategy Session"
+
+  date:
+    type: date
+    format: "YYYY-MM-DD"
+    description: Date the source material was created or the meeting occurred
+
+  source_type:
+    type: enum
+    values:
+      - meeting-transcript
+      - document
+      - research
+      - email
+      - slack-thread
+      - web-research
+    description: Where this intelligence was extracted from
+
+  domains:
+    type: array
+    description: Knowledge domains this intelligence belongs to
+    values:
+      - market-research
+      - competitive-intel
+      - client-intelligence
+      - industry-trends
+      - technology-signals
+      - partnership-opportunities
+      - team-insights
+      - financial-intel
+      - sales-intelligence
+      - solutions-positioning
+
+  version:
+    type: integer
+    default: 1
+    description: Increments each time the file is meaningfully updated
+
+  updated:
+    type: datetime
+    format: "ISO-8601"
+    description: Timestamp of the last update
+
+  updated_by:
+    type: string
+    description: Name of the person or skill that last updated this file
+
+optional_fields:
+  client:
+    type: string
+    description: Client slug (lowercase, hyphenated) or null for non-client intelligence
+    example: "acme-corp"
+
+  participants:
+    type: array
+    description: People involved in the source material
+    example: ["Arnold Macauley", "Jane Smith", "Bob Chen"]
+
+  related_files:
+    type: array
+    description: Filenames of related intelligence files for cross-referencing
+
+  project:
+    type: string
+    description: Related project name if applicable
+
+  confidence:
+    type: enum
+    values: [high, medium, low]
+    description: How confident we are in the extracted insights
+
+  summary:
+    type: string
+    description: One-paragraph executive summary
+
+  industry:
+    type: string
+    description: Industry vertical slug (lowercase, hyphenated)
+    example: "aerospace-manufacturing"
+
+# Filename convention
+# Pattern: YYYY-MM-DD_client-slug_source-type_title-slug.intelligence.md
+# Examples:
+#   2026-02-15_acme-corp_meeting-transcript_q1-strategy-session.intelligence.md
+#   2026-02-20_internal_research_ai-agent-market-landscape.intelligence.md
+#   2026-03-01_teledyne_email_project-kickoff-details.intelligence.md
+#
+# Rules:
+#   - All lowercase, hyphens instead of spaces
+#   - Client slug is "internal" for non-client intelligence
+#   - Title slug is max 6 words, capturing the essence
+#   - .intelligence.md extension identifies these files in the ecosystem

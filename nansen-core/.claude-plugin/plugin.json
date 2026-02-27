@@ -1,0 +1,15 @@
+{
+  "name": "nansen-core",
+  "version": "0.1.0",
+  "description": "Shared intelligence foundation for Nansen's plugin ecosystem. Extract, structure, and sync domain knowledge to a team Google Drive. Includes /setup (environment verification), /onboarding (guided walkthrough), and Market Research skill.",
+  "author": {
+    "name": "Nansen"
+  },
+  "keywords": [
+    "intelligence",
+    "knowledge-base",
+    "market-research",
+    "extraction",
+    "nansen-core"
+  ]
+}

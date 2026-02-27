@@ -1,0 +1,15 @@
+{
+  "name": "nansen-growth",
+  "version": "0.1.0",
+  "description": "Growth domain plugin for Nansen. Proactive industry research, client needs analysis, and solutions positioning. Built on nansen-core's intelligence infrastructure.",
+  "author": {
+    "name": "Nansen"
+  },
+  "keywords": [
+    "growth",
+    "industry-research",
+    "solutions-positioning",
+    "sales-intelligence",
+    "business-development"
+  ]
+}

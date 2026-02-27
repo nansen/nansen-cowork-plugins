@@ -1,0 +1,24 @@
+{
+  "version": "1.0.0",
+  "setup_date": "2026-01-01T00:00:00Z",
+  "setup_by": "team-member-name",
+  "workspace_paths": {
+    "sources": "/path/to/nansen/sources",
+    "intelligence": "/path/to/nansen/intelligence",
+    "outputs": "/path/to/nansen/outputs"
+  },
+  "google_drive": {
+    "installed": false,
+    "mount_path": null,
+    "shared_drive_folder": null,
+    "sync_configured": false
+  },
+  "fathom": {
+    "connected": false,
+    "api_key_set": false
+  },
+  "slack": {
+    "mcp_connected": false
+  },
+  "pilot_group": true
+}
