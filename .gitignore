@@ -3,3 +3,4 @@
 __pycache__/
 *.pyc
 .nansen-config.json
+node_modules/

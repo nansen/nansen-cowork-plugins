@@ -20,18 +20,27 @@ nansen-core integrates with several external services. Not all are required for 
 
 **Purpose**: Automatically fetches meeting transcripts for intelligence extraction.
 
+**Type**: Stdio MCP server (bundled in `servers/fathom/`)
+
 **API Documentation**: https://developers.fathom.ai/
 
 **Setup**:
 1. Sign up or log in at https://fathom.video
 2. Generate an API key from your Fathom developer settings
-3. The `/setup` command will prompt for the key and validate it
+3. Set the `FATHOM_API_KEY` environment variable (add `export FATHOM_API_KEY="your-key"` to your `~/.zshrc` or `~/.bashrc`)
+4. Run `npm install` inside `servers/fathom/`
+5. The `/setup` command will prompt for the key and validate it
 
-**How it works**: When connected, skills can pull recent meeting transcripts directly from Fathom's API instead of requiring manual file drops into sources/.
+**MCP Tools provided**:
+- `list_meetings` -- List recent meetings with date filtering (created_after/created_before)
+- `get_transcript` -- Fetch full speaker-attributed transcript for a specific meeting
+- `get_meeting_details` -- Get meeting metadata, summary, and action items
 
-**Requirements**: Fathom account with API access. Free tier may have limitations.
+**How it works**: The Fathom MCP server runs as a local stdio process. When Cowork starts a session with nansen-core, it spawns the server automatically. Skills can then call `list_meetings` and `get_transcript` to pull meeting data directly from Fathom's API, no manual file drops needed.
 
-**POC note**: For the pilot, users can also just export transcripts from Fathom manually and drop them into sources/. API integration is a convenience, not a requirement.
+**Requirements**: Fathom account with API access. The `FATHOM_API_KEY` environment variable must be set. The domain `api.fathom.ai` must be accessible (check Cowork network allowlist settings).
+
+**Fallback**: Users can also export transcripts from Fathom manually and drop them into sources/. The MCP integration is a convenience, not a requirement.
 
 ## Slack (Optional -- context and distribution)
 

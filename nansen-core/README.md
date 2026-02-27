@@ -25,6 +25,14 @@ nansen-core turns raw source material (meeting transcripts, documents, research)
 |-------|---------|
 | Market Research | Extract market trends, competitive signals, and client intelligence from source documents |
 
+## MCP Servers
+
+| Server | Purpose |
+|--------|---------|
+| Fathom | List meetings, fetch transcripts, and get meeting details from Fathom.video |
+
+Requires `FATHOM_API_KEY` environment variable. Run `npm install` in `servers/fathom/` after cloning. See `CONNECTORS.md` for full setup details.
+
 ## Folder Structure
 
 ```
@@ -44,7 +52,7 @@ YYYY-MM-DD_client-slug_source-type_title-slug.intelligence.md
 
 ## Version
 
-0.1.0 (Phase 1 POC)
+0.2.0
 
 ## Architecture
 

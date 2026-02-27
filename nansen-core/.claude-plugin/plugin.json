@@ -1,7 +1,7 @@
 {
   "name": "nansen-core",
-  "version": "0.1.0",
-  "description": "Shared intelligence foundation for Nansen's plugin ecosystem. Extract, structure, and sync domain knowledge to a team Google Drive. Includes /setup (environment verification), /onboarding (guided walkthrough), and Market Research skill.",
+  "version": "0.2.0",
+  "description": "Shared intelligence foundation for Nansen's plugin ecosystem. Extract, structure, and sync domain knowledge to a team Google Drive. Includes /setup (environment verification), /onboarding (guided walkthrough), Market Research skill, and Fathom meeting transcript integration.",
   "author": {
     "name": "Nansen"
   },
@@ -10,6 +10,9 @@
     "knowledge-base",
     "market-research",
     "extraction",
-    "nansen-core"
-  ]
+    "nansen-core",
+    "fathom",
+    "transcripts"
+  ],
+  "mcpServers": "./.mcp.json"
 }

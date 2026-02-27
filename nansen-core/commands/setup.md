@@ -1,6 +1,6 @@
 ---
 description: Set up the Nansen intelligence ecosystem for a new team member
-allowed-tools: Read, Write, Edit, Bash(ls:*), Bash(mkdir:*), Bash(cp:*), Bash(find:*), Bash(test:*), Bash(cat:*), Bash(echo:*), Bash(date:*), Bash(python3:*)
+allowed-tools: Read, Write, Edit, Bash(ls:*), Bash(mkdir:*), Bash(cp:*), Bash(find:*), Bash(test:*), Bash(cat:*), Bash(echo:*), Bash(date:*), Bash(python3:*), Bash(npm:*), Bash(node:*)
 ---
 
 Walk the user through setting up Nansen's intelligence ecosystem on their machine. Follow these steps in order, checking status at each stage before moving on. Be conversational and helpful -- the user may not be technical. Use clear language and explain what each step does and why.
@@ -42,43 +42,51 @@ For each directory, create it and add a brief README.md inside explaining its pu
 
 After creating, confirm: "Your folder structure is ready. Here's what I set up: [list the three folders with a brief description of each]."
 
-## Step 3 -- Google Drive for Desktop
+## Step 3 -- Google Drive (read access)
 
-This step connects the intelligence/ folder to a shared Google Drive so the whole team can access extracted knowledge.
+The Google Drive MCP connector is available for reading existing documents from Drive -- no setup needed. Skills can search and pull documents from the team's Shared Drive automatically.
 
-Check if Google Drive for Desktop is installed by looking for common mount points:
-- macOS: `/Volumes/GoogleDrive/` or `~/Library/CloudStorage/GoogleDrive-*/`
-- Also check: `~/Google Drive/` or `/Users/*/Google Drive/`
+Confirm the connector is working by running a quick test search against Google Drive. If it returns results, note it as connected in the config.
 
-If Google Drive for Desktop is found:
-- Tell the user what you found
-- Ask them to confirm which Google Drive account they want to use (they may have multiple)
-- Ask for the name of the Shared Drive or folder where team intelligence should live (e.g., "Nansen Intelligence" or "Nansen Shared/intelligence")
-- Note: For the POC, we're pointing intelligence/ to a specific Google Drive location. The user may need to create a Shared Drive folder first.
-
-If Google Drive for Desktop is NOT found:
-- Explain: "Google Drive for Desktop syncs files between your computer and Google Drive automatically. We need it so your intelligence/ folder stays in sync with the team."
-- Point them to: https://www.google.com/drive/download/
-- Tell them to install it, sign in with their Nansen Google account, and come back
-- Wait for confirmation, then re-check
-
-Once Drive is confirmed:
-- Record the Drive mount path in the config
-- Explain that intelligence/ will be the folder that syncs -- when they or any skill writes an intelligence file, it automatically becomes available to the whole team
-
-**Important**: Don't try to create symlinks or move folders around automatically. Just record the paths and explain the manual step: "You'll need to either move your intelligence/ folder into Google Drive, or set up Google Drive to sync that specific folder. The easiest approach for the POC is to create a 'Nansen Intelligence' folder in your Shared Drive and use that as your intelligence/ location."
+**Note on intelligence sharing (future):** For the POC, intelligence files stay in the local intelligence/ folder. Syncing intelligence files to the team's Shared Drive (Nansen > nansen-cowork > intelligence) is a priority item for Phase 2. The approach for sharing extracted knowledge across the team is still being worked out. For now, focus on proving the extraction pipeline works.
 
 ## Step 4 -- Fathom connection (optional for POC)
 
-Fathom (https://fathom.video) records and transcribes meetings. If the user has a Fathom account, we can pull transcripts directly.
+Fathom (https://fathom.video) records and transcribes meetings. nansen-core includes a bundled Fathom MCP server that provides `list_meetings`, `get_transcript`, and `get_meeting_details` tools.
+
+### 4a -- Install Fathom MCP server dependencies
+
+First, install the npm dependencies for the Fathom MCP server. Locate the `servers/fathom/` directory inside the nansen-core plugin folder and run:
+
+```bash
+npm install --prefix [path-to-nansen-core]/servers/fathom/
+```
+
+Check whether `node_modules` already exists in that directory first. If it does, skip the install.
+
+If the install fails (e.g. npm or Node.js not found), tell the user:
+- "The Fathom connector needs Node.js installed. You can get it from https://nodejs.org/"
+- Note this in the config and move on -- they can install later
+
+### 4b -- API key setup
 
 Ask: "Do you use Fathom for meeting recordings? If so, I can help connect it so we can pull transcripts automatically."
 
-If yes:
-- Direct them to https://developers.fathom.ai/ to get their API key
+If yes, walk them through creating an API key:
+1. Log into Fathom at https://fathom.video
+2. Go to **Settings** (top right corner)
+3. Scroll down to the **My Settings** section and find **API Access**
+4. Click **Add**, then **Generate API Key**
+5. Give the key a name (e.g., "Nansen Intelligence")
+6. Click **Create API Client**
+7. Copy the API key -- they'll need to paste it here
+
+Note: Fathom API keys are user-level, which means each person's key only gives access to meetings they recorded or that were shared to their team. Each pilot member will need to generate their own key.
+
 - Ask them to paste their API key
-- Store the key reference in the config (note: for POC, we'll validate this manually)
-- Explain: "For now, you can also just drop Fathom transcript files directly into sources/ and we'll process them from there."
+- Explain that they need to set `FATHOM_API_KEY` as an environment variable (add `export FATHOM_API_KEY="your-key"` to `~/.zshrc` or `~/.bashrc`)
+- Store the key reference in the config
+- Explain: "Once connected, you can ask me to list your recent Fathom meetings and pull transcripts directly. You can also still drop transcript files into sources/ manually."
 
 If no or they want to skip:
 - That's fine -- they can always add files to sources/ manually
@@ -156,14 +164,20 @@ Setup completed on [date] by [user name].
 ```
 
 3. **Config check**: Read back the config file and confirm it's valid JSON
-4. **Drive sync note**: If Drive is configured, remind the user to check that the test file appears in their Shared Drive within a minute or two
+4. **Fathom server check**: If Fathom is connected, verify the MCP server starts correctly by running a quick initialization handshake:
+   ```bash
+   echo '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"test","version":"1.0"}}}' | FATHOM_API_KEY="test" timeout 5 node [path-to-servers/fathom/server.mjs]
+   ```
+   If the response contains `"serverInfo"`, the server is working. If it fails, check that npm install was run and Node.js is available.
+5. **Drive sync note**: If Drive is configured, remind the user to check that the test file appears in their Shared Drive within a minute or two
 
 Present results as a checklist:
 - Folder structure: PASS/FAIL
 - Intelligence file creation: PASS/FAIL
 - Config file: PASS/FAIL
+- Fathom MCP server: PASS/FAIL/SKIPPED
 - Google Drive: CONFIGURED/SKIPPED
-- Fathom: CONNECTED/SKIPPED
+- Fathom API key: CONNECTED/SKIPPED
 - Slack: CONNECTED/SKIPPED
 
 ## Wrap up

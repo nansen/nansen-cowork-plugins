@@ -1,0 +1,13 @@
+{
+  "name": "fathom-mcp-server",
+  "version": "1.0.0",
+  "description": "Fathom.video MCP server for nansen-core - fetches meeting transcripts",
+  "type": "module",
+  "main": "server.mjs",
+  "scripts": {
+    "start": "node server.mjs"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.12.1"
+  }
+}
