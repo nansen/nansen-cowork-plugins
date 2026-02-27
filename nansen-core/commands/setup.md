@@ -87,27 +87,32 @@ The user should never need to open Terminal, find directories, or run commands m
 
 ### 4b -- API key setup
 
-Ask: "Do you use Fathom for meeting recordings? If so, I can help connect it so we can pull transcripts automatically."
+**Always explicitly ask the user for their Fathom API key.** Don't skip this silently -- prompt them directly and give them the option to enter it now or skip.
 
-If yes, walk them through creating an API key:
+Say something like: "Next I need to connect Fathom so we can pull your meeting transcripts automatically. Do you have your Fathom API key handy? If not, here's how to get one -- it only takes a minute."
+
+Then show them the steps:
+
 1. Log into Fathom at https://fathom.video
 2. Go to **Settings** (top right corner)
 3. Scroll down to the **My Settings** section and find **API Access**
 4. Click **Add**, then **Generate API Key**
 5. Give the key a name (e.g., "Nansen Intelligence")
 6. Click **Create API Client**
-7. Copy the API key -- they'll need to paste it here
+7. Copy the API key that appears
+
+Then ask: "Paste your API key here when you're ready, or type 'skip' if you'd like to set this up later."
 
 Note: Fathom API keys are user-level, which means each person's key only gives access to meetings they recorded or that were shared to their team. Each pilot member will need to generate their own key.
 
-- Ask them to paste their API key
-- Explain that they need to set `FATHOM_API_KEY` as an environment variable (add `export FATHOM_API_KEY="your-key"` to `~/.zshrc` or `~/.bashrc`)
-- Store the key reference in the config
-- Explain: "Once connected, you can ask me to list your recent Fathom meetings and pull transcripts directly. You can also still drop transcript files into sources/ manually."
+**If they provide a key:**
+- Set `FATHOM_API_KEY` as an environment variable by adding `export FATHOM_API_KEY="their-key"` to `~/.zshrc` (or `~/.bashrc` if they use bash)
+- Store the key reference in the config as `fathom_connected: true, api_key_set: true`
+- Confirm: "Fathom is connected. You can now ask me to list your recent meetings or pull transcripts directly."
 
-If no or they want to skip:
-- That's fine -- they can always add files to sources/ manually
-- Note this in the config as `fathom_connected: false`
+**If they skip:**
+- That's fine -- let them know they can always drop transcript files into sources/ manually, and they can re-run /setup later to add the key
+- Note this in the config as `fathom_connected: false, api_key_set: false`
 
 ## Step 5 -- Slack verification
 
