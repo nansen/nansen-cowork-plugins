@@ -54,19 +54,36 @@ Confirm the connector is working by running a quick test search against Google D
 
 Fathom (https://fathom.video) records and transcribes meetings. nansen-core includes a bundled Fathom MCP server that provides `list_meetings`, `get_transcript`, and `get_meeting_details` tools.
 
-### 4a -- Install Fathom MCP server dependencies
+### 4a -- Install Fathom MCP server dependencies (automated)
 
-First, install the npm dependencies for the Fathom MCP server. Locate the `servers/fathom/` directory inside the nansen-core plugin folder and run:
+The Fathom MCP server is bundled inside the nansen-core plugin. The user does NOT need to touch the terminal for this -- handle it entirely within setup.
 
-```bash
-npm install --prefix [path-to-nansen-core]/servers/fathom/
-```
+**Step-by-step for the setup command to follow:**
 
-Check whether `node_modules` already exists in that directory first. If it does, skip the install.
+1. **Locate the plugin install path.** The Fathom server lives at `servers/fathom/` relative to the nansen-core plugin root. Search for it by checking these locations in order:
+   - `$CLAUDE_PLUGIN_ROOT/servers/fathom/` (if CLAUDE_PLUGIN_ROOT is set)
+   - Look for `servers/fathom/server.mjs` inside any `.local-plugins/` or `.claude/cowork_plugins/` directory tree
+   - As a last resort, search the mounted workspace for `servers/fathom/server.mjs`
 
-If the install fails (e.g. npm or Node.js not found), tell the user:
-- "The Fathom connector needs Node.js installed. You can get it from https://nodejs.org/"
-- Note this in the config and move on -- they can install later
+2. **Check if dependencies are already installed.** Look for a `node_modules/` directory inside the fathom server folder. If it exists and contains files, skip npm install entirely. The marketplace distribution should include node_modules.
+
+3. **If node_modules is missing, run npm install automatically.** Use:
+   ```bash
+   npm install --prefix [discovered-fathom-path]
+   ```
+   Do this silently -- just tell the user "Setting up the Fathom connector..." and then confirm when done.
+
+4. **If npm or Node.js isn't available**, tell the user in plain language:
+   - "The Fathom connector needs Node.js to run. You can install it from https://nodejs.org/ (just download and run the installer). Once that's done, re-run /setup and I'll handle the rest."
+   - Note this in the config as `fathom_node_available: false` and move on
+
+5. **Verify the server can start** by running the initialization handshake:
+   ```bash
+   echo '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"test","version":"1.0"}}}' | FATHOM_API_KEY="test" timeout 5 node [discovered-path]/server.mjs
+   ```
+   If the response contains `"serverInfo"`, confirm: "Fathom server is installed and ready."
+
+The user should never need to open Terminal, find directories, or run commands manually.
 
 ### 4b -- API key setup
 
@@ -164,11 +181,7 @@ Setup completed on [date] by [user name].
 ```
 
 3. **Config check**: Read back the config file and confirm it's valid JSON
-4. **Fathom server check**: If Fathom is connected, verify the MCP server starts correctly by running a quick initialization handshake:
-   ```bash
-   echo '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"test","version":"1.0"}}}' | FATHOM_API_KEY="test" timeout 5 node [path-to-servers/fathom/server.mjs]
-   ```
-   If the response contains `"serverInfo"`, the server is working. If it fails, check that npm install was run and Node.js is available.
+4. **Fathom server check**: If Fathom was set up in Step 4a, this was already verified there. Just confirm the result: PASS if the server responded, FAIL if it didn't, SKIPPED if the user opted out.
 5. **Drive sync note**: If Drive is configured, remind the user to check that the test file appears in their Shared Drive within a minute or two
 
 Present results as a checklist:
