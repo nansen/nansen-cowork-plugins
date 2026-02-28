@@ -463,8 +463,8 @@ const defaultHandler = {
       return Response.redirect(redirectTo, 302);
     }
 
-    // Health check
-    if (url.pathname === "/" || url.pathname === "/health") {
+    // Health check (only at /health to avoid catching MCP traffic at /)
+    if (url.pathname === "/health") {
       return new Response(
         JSON.stringify({
           name: "fathom-mcp",
@@ -485,7 +485,7 @@ const defaultHandler = {
 // ─────────────────────────────────────────────
 
 export default new OAuthProvider({
-  apiRoute: "/mcp",
+  apiRoute: "/",
   apiHandler: FathomMCP,
   defaultHandler,
   authorizeEndpoint: "/authorize",
