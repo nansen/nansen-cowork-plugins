@@ -10,4 +10,4 @@ bindings = [
 
 [[migrations]]
 tag = "v1"
-new_classes = ["FathomMCP"]
+new_sqlite_classes = ["FathomMCP"]
