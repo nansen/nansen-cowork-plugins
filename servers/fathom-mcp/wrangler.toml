@@ -8,6 +8,7 @@ bindings = [
   { name = "MCP_OBJECT", class_name = "FathomMCP" }
 ]
 
+# v1 was the original migration that created the class
 [[migrations]]
-tag = "v2"
+tag = "v1"
 new_sqlite_classes = ["FathomMCP"]
