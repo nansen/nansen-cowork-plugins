@@ -8,4 +8,4 @@ compatibility_flags = ["nodejs_compat", "global_fetch_strictly_public"]
 # Then paste the ID below
 [[kv_namespaces]]
 binding = "OAUTH_KV"
-id = "REPLACE_WITH_YOUR_KV_NAMESPACE_ID"
+id = "54ab7100dc084a7f88c5b3343b5a8871"
