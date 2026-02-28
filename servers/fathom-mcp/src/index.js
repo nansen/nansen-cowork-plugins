@@ -269,8 +269,6 @@ export class FathomMCP extends McpAgent {
 }
 
 // -- Worker entry point --
-// Use McpAgent.serve() to handle the MCP protocol via Durable Objects
-const mcpWorker = FathomMCP.serve("/mcp", { binding: "MCP_OBJECT" });
 
 export default {
   async fetch(request, env, ctx) {
@@ -292,7 +290,10 @@ export default {
       );
     }
 
-    // Delegate MCP requests to the McpAgent serve handler
-    return mcpWorker.fetch(request, env, ctx);
+    if (url.pathname === "/mcp") {
+      return FathomMCP.serve("/mcp").fetch(request, env, ctx);
+    }
+
+    return new Response("Not found", { status: 404 });
   },
 };
