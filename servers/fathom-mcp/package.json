@@ -1,0 +1,19 @@
+{
+  "name": "fathom-mcp-remote",
+  "version": "1.0.0",
+  "description": "Remote Fathom MCP server for Nansen - deployed on Cloudflare Workers",
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "tail": "wrangler tail"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.12.1",
+    "agents": "^0.0.74",
+    "zod": "^3.24.0"
+  },
+  "devDependencies": {
+    "wrangler": "^4.0.0"
+  }
+}
