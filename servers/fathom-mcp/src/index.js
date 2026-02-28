@@ -4,22 +4,18 @@
  * Remote MCP server with proper OAuth 2.1 authentication.
  * Users authenticate by entering their Fathom API key via the OAuth flow.
  * The key is stored securely in the OAuth token props and extracted
- * on each MCP request.
+ * on each MCP request via getMcpAuthContext().
  *
- * v2.0.0 - Full OAuth 2.1 implementation
+ * v2.1.0 - Fixed createMcpHandler usage for agents 0.6.0
  */
 
 import { OAuthProvider } from "@cloudflare/workers-oauth-provider";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { createMcpHandler } from "agents/mcp";
+import { createMcpHandler, getMcpAuthContext } from "agents/mcp";
 import { z } from "zod";
 import { WorkerEntrypoint } from "cloudflare:workers";
 
 const FATHOM_API_BASE = "https://api.fathom.ai/external/v1";
-
-// Module-scoped variable for the current request's API key.
-// Safe in Workers (single-threaded per-request execution).
-let _currentFathomKey = null;
 
 // ─────────────────────────────────────────────
 //  Fathom API helper
@@ -46,237 +42,245 @@ async function fathomFetch(apiKey, path, params = {}) {
   return res.json();
 }
 
+// Helper to get Fathom API key from auth context
+function getFathomKey() {
+  const ctx = getMcpAuthContext();
+  return ctx?.props?.fathomApiKey || null;
+}
+
 // ─────────────────────────────────────────────
-//  MCP Handler (tools definition)
+//  Build a fresh McpServer with tools registered
+//  (must be new per request for stateless handlers)
 // ─────────────────────────────────────────────
 
-const mcpHandler = createMcpHandler(
-  (server) => {
-    // Tool: list_meetings
-    server.tool(
-      "list_meetings",
-      "List recent Fathom meetings. Returns meeting ID, title, date, duration, and participants. Use created_after/created_before for date filtering (ISO-8601 format, e.g. 2026-02-20T00:00:00Z).",
-      {
-        created_after: z
-          .string()
-          .optional()
-          .describe("Only meetings created after this ISO-8601 datetime"),
-        created_before: z
-          .string()
-          .optional()
-          .describe("Only meetings created before this ISO-8601 datetime"),
-        include_transcript: z
-          .boolean()
-          .optional()
-          .default(false)
-          .describe("Include full transcript in response"),
-        limit: z
-          .number()
-          .optional()
-          .default(20)
-          .describe("Max meetings to return (default: 20)"),
-      },
-      async ({ created_after, created_before, include_transcript, limit }) => {
-        const apiKey = _currentFathomKey;
-        if (!apiKey) {
-          return {
-            content: [
-              {
-                type: "text",
-                text: "Authentication required. Please reconnect and enter your Fathom API key.",
-              },
-            ],
-            isError: true,
-          };
-        }
+function buildMcpServer() {
+  const server = new McpServer({
+    name: "fathom-mcp",
+    version: "2.1.0",
+  });
 
-        try {
-          const params = {};
-          if (created_after) params.created_after = created_after;
-          if (created_before) params.created_before = created_before;
-          if (include_transcript) params.include_transcript = "true";
-
-          const data = await fathomFetch(apiKey, "/meetings", params);
-          const meetings = Array.isArray(data)
-            ? data
-            : data.meetings || data.data || [];
-          const sliced = meetings.slice(0, limit);
-
-          const summary = sliced.map((m) => ({
-            id: m.id,
-            title: m.title || m.name || "Untitled meeting",
-            date: m.created_at || m.date || m.recorded_at,
-            duration_seconds: m.duration || m.duration_seconds,
-            participants: m.participants || m.attendees || [],
-            recording_id: m.recording_id || m.recordings?.[0]?.id,
-            ...(include_transcript && m.transcript
-              ? { transcript: m.transcript }
-              : {}),
-          }));
-
-          return {
-            content: [
-              {
-                type: "text",
-                text: JSON.stringify(
-                  { count: summary.length, meetings: summary },
-                  null,
-                  2
-                ),
-              },
-            ],
-          };
-        } catch (err) {
-          return {
-            content: [
-              { type: "text", text: `Error listing meetings: ${err.message}` },
-            ],
-            isError: true,
-          };
-        }
+  // Tool: list_meetings
+  server.tool(
+    "list_meetings",
+    "List recent Fathom meetings. Returns meeting ID, title, date, duration, and participants. Use created_after/created_before for date filtering (ISO-8601 format, e.g. 2026-02-20T00:00:00Z).",
+    {
+      created_after: z
+        .string()
+        .optional()
+        .describe("Only meetings created after this ISO-8601 datetime"),
+      created_before: z
+        .string()
+        .optional()
+        .describe("Only meetings created before this ISO-8601 datetime"),
+      include_transcript: z
+        .boolean()
+        .optional()
+        .default(false)
+        .describe("Include full transcript in response"),
+      limit: z
+        .number()
+        .optional()
+        .default(20)
+        .describe("Max meetings to return (default: 20)"),
+    },
+    async ({ created_after, created_before, include_transcript, limit }) => {
+      const apiKey = getFathomKey();
+      if (!apiKey) {
+        return {
+          content: [
+            {
+              type: "text",
+              text: "Authentication required. Please reconnect and enter your Fathom API key.",
+            },
+          ],
+          isError: true,
+        };
       }
-    );
 
-    // Tool: get_transcript
-    server.tool(
-      "get_transcript",
-      "Get the full transcript for a specific Fathom meeting. Returns speaker-attributed transcript text.",
-      {
-        meeting_id: z.string().describe("The meeting ID (from list_meetings)"),
-        recording_id: z
-          .string()
-          .optional()
-          .describe(
-            "Optional recording ID if the meeting has multiple recordings"
-          ),
-      },
-      async ({ meeting_id, recording_id }) => {
-        const apiKey = _currentFathomKey;
-        if (!apiKey) {
-          return {
-            content: [{ type: "text", text: "Authentication required." }],
-            isError: true,
-          };
-        }
+      try {
+        const params = {};
+        if (created_after) params.created_after = created_after;
+        if (created_before) params.created_before = created_before;
+        if (include_transcript) params.include_transcript = "true";
+
+        const data = await fathomFetch(apiKey, "/meetings", params);
+        const meetings = Array.isArray(data)
+          ? data
+          : data.meetings || data.data || [];
+        const sliced = meetings.slice(0, limit);
+
+        const summary = sliced.map((m) => ({
+          id: m.id,
+          title: m.title || m.name || "Untitled meeting",
+          date: m.created_at || m.date || m.recorded_at,
+          duration_seconds: m.duration || m.duration_seconds,
+          participants: m.participants || m.attendees || [],
+          recording_id: m.recording_id || m.recordings?.[0]?.id,
+          ...(include_transcript && m.transcript
+            ? { transcript: m.transcript }
+            : {}),
+        }));
+
+        return {
+          content: [
+            {
+              type: "text",
+              text: JSON.stringify(
+                { count: summary.length, meetings: summary },
+                null,
+                2
+              ),
+            },
+          ],
+        };
+      } catch (err) {
+        return {
+          content: [
+            { type: "text", text: `Error listing meetings: ${err.message}` },
+          ],
+          isError: true,
+        };
+      }
+    }
+  );
+
+  // Tool: get_transcript
+  server.tool(
+    "get_transcript",
+    "Get the full transcript for a specific Fathom meeting. Returns speaker-attributed transcript text.",
+    {
+      meeting_id: z.string().describe("The meeting ID (from list_meetings)"),
+      recording_id: z
+        .string()
+        .optional()
+        .describe(
+          "Optional recording ID if the meeting has multiple recordings"
+        ),
+    },
+    async ({ meeting_id, recording_id }) => {
+      const apiKey = getFathomKey();
+      if (!apiKey) {
+        return {
+          content: [{ type: "text", text: "Authentication required." }],
+          isError: true,
+        };
+      }
+
+      try {
+        let transcript;
+        const rid = recording_id || meeting_id;
 
         try {
-          let transcript;
-          const rid = recording_id || meeting_id;
+          transcript = await fathomFetch(
+            apiKey,
+            `/recordings/${rid}/transcript`
+          );
+        } catch {
+          transcript = await fathomFetch(apiKey, `/meetings/${meeting_id}`, {
+            include_transcript: "true",
+          });
+        }
 
-          try {
-            transcript = await fathomFetch(
-              apiKey,
-              `/recordings/${rid}/transcript`
-            );
-          } catch {
-            transcript = await fathomFetch(apiKey, `/meetings/${meeting_id}`, {
-              include_transcript: "true",
-            });
-          }
-
-          let text;
-          if (typeof transcript === "string") {
-            text = transcript;
-          } else if (transcript.transcript) {
-            if (Array.isArray(transcript.transcript)) {
-              text = transcript.transcript
-                .map((seg) => {
-                  const speaker =
-                    seg.speaker || seg.speaker_name || "Unknown";
-                  const content = seg.text || seg.content || "";
-                  return `[${speaker}]: ${content}`;
-                })
-                .join("\n");
-            } else {
-              text = String(transcript.transcript);
-            }
-          } else if (transcript.segments || transcript.utterances) {
-            const segs = transcript.segments || transcript.utterances;
-            text = segs
+        let text;
+        if (typeof transcript === "string") {
+          text = transcript;
+        } else if (transcript.transcript) {
+          if (Array.isArray(transcript.transcript)) {
+            text = transcript.transcript
               .map((seg) => {
-                const speaker = seg.speaker || seg.speaker_name || "Unknown";
+                const speaker =
+                  seg.speaker || seg.speaker_name || "Unknown";
                 const content = seg.text || seg.content || "";
                 return `[${speaker}]: ${content}`;
               })
               .join("\n");
           } else {
-            text = JSON.stringify(transcript, null, 2);
+            text = String(transcript.transcript);
           }
-
-          return {
-            content: [{ type: "text", text }],
-          };
-        } catch (err) {
-          return {
-            content: [
-              {
-                type: "text",
-                text: `Error fetching transcript: ${err.message}`,
-              },
-            ],
-            isError: true,
-          };
+        } else if (transcript.segments || transcript.utterances) {
+          const segs = transcript.segments || transcript.utterances;
+          text = segs
+            .map((seg) => {
+              const speaker = seg.speaker || seg.speaker_name || "Unknown";
+              const content = seg.text || seg.content || "";
+              return `[${speaker}]: ${content}`;
+            })
+            .join("\n");
+        } else {
+          text = JSON.stringify(transcript, null, 2);
         }
+
+        return {
+          content: [{ type: "text", text }],
+        };
+      } catch (err) {
+        return {
+          content: [
+            {
+              type: "text",
+              text: `Error fetching transcript: ${err.message}`,
+            },
+          ],
+          isError: true,
+        };
       }
-    );
+    }
+  );
 
-    // Tool: get_meeting_details
-    server.tool(
-      "get_meeting_details",
-      "Get full details for a specific Fathom meeting including summary, action items, and metadata.",
-      {
-        meeting_id: z.string().describe("The meeting ID (from list_meetings)"),
-      },
-      async ({ meeting_id }) => {
-        const apiKey = _currentFathomKey;
-        if (!apiKey) {
-          return {
-            content: [{ type: "text", text: "Authentication required." }],
-            isError: true,
-          };
-        }
-
-        try {
-          const data = await fathomFetch(apiKey, `/meetings/${meeting_id}`);
-          return {
-            content: [
-              { type: "text", text: JSON.stringify(data, null, 2) },
-            ],
-          };
-        } catch (err) {
-          return {
-            content: [
-              {
-                type: "text",
-                text: `Error fetching meeting details: ${err.message}`,
-              },
-            ],
-            isError: true,
-          };
-        }
+  // Tool: get_meeting_details
+  server.tool(
+    "get_meeting_details",
+    "Get full details for a specific Fathom meeting including summary, action items, and metadata.",
+    {
+      meeting_id: z.string().describe("The meeting ID (from list_meetings)"),
+    },
+    async ({ meeting_id }) => {
+      const apiKey = getFathomKey();
+      if (!apiKey) {
+        return {
+          content: [{ type: "text", text: "Authentication required." }],
+          isError: true,
+        };
       }
-    );
-  },
-  {
-    name: "fathom-mcp",
-    version: "2.0.0",
-  },
-  "/mcp"
-);
+
+      try {
+        const data = await fathomFetch(apiKey, `/meetings/${meeting_id}`);
+        return {
+          content: [
+            { type: "text", text: JSON.stringify(data, null, 2) },
+          ],
+        };
+      } catch (err) {
+        return {
+          content: [
+            {
+              type: "text",
+              text: `Error fetching meeting details: ${err.message}`,
+            },
+          ],
+          isError: true,
+        };
+      }
+    }
+  );
+
+  return server;
+}
 
 // ─────────────────────────────────────────────
 //  API Handler (protected MCP endpoint)
-//  Receives authenticated requests from OAuthProvider
+//  Receives authenticated requests from OAuthProvider.
+//  Creates a fresh McpServer + handler per request.
 // ─────────────────────────────────────────────
 
 export class FathomMCP extends WorkerEntrypoint {
   async fetch(request) {
-    // Extract the Fathom API key from the OAuth token props
-    // (stored during the authorization flow in completeAuthorization)
-    _currentFathomKey = this.ctx?.props?.fathomApiKey || null;
-
-    // Delegate to the MCP handler
-    return mcpHandler(request, this.env, this.ctx);
+    // Build a fresh McpServer per request (required for stateless handlers -
+    // createMcpHandler connects the server to a transport, and a connected
+    // server cannot be reused).
+    const server = buildMcpServer();
+    const handler = createMcpHandler(server, { route: "/mcp" });
+    return handler(request, this.env, this.ctx);
   }
 }
 
@@ -285,7 +289,6 @@ export class FathomMCP extends WorkerEntrypoint {
 // ─────────────────────────────────────────────
 
 function renderAuthPage(oauthReqInfo) {
-  // Serialize the OAuth request info to pass through the form
   const stateParam = encodeURIComponent(JSON.stringify(oauthReqInfo));
 
   return `<!DOCTYPE html>
@@ -404,7 +407,6 @@ const defaultHandler = {
 
     // GET /authorize - Show the API key entry form
     if (url.pathname === "/authorize" && request.method === "GET") {
-      // Parse the incoming OAuth authorization request
       const oauthReqInfo = await env.OAUTH_PROVIDER.parseAuthRequest(request);
       if (!oauthReqInfo.clientId) {
         return new Response("Invalid OAuth request", { status: 400 });
@@ -424,7 +426,6 @@ const defaultHandler = {
         return new Response("API key is required", { status: 400 });
       }
 
-      // Reconstruct the OAuth request info from the hidden form field
       let oauthReqInfo;
       try {
         oauthReqInfo = JSON.parse(decodeURIComponent(oauthStateRaw));
@@ -432,11 +433,10 @@ const defaultHandler = {
         return new Response("Invalid OAuth state", { status: 400 });
       }
 
-      // Validate the API key by making a test call to Fathom
+      // Validate the API key
       try {
         await fathomFetch(fathomApiKey, "/meetings", {});
       } catch (err) {
-        // Key is invalid, show the form again with an error
         return new Response(
           renderAuthPage(oauthReqInfo).replace(
             "</form>",
@@ -448,9 +448,7 @@ const defaultHandler = {
         );
       }
 
-      // Complete the OAuth authorization flow
-      // The fathomApiKey is stored in props and will be available
-      // in the API handler via this.ctx.props.fathomApiKey
+      // Complete OAuth flow - fathomApiKey stored in props
       const { redirectTo } = await env.OAUTH_PROVIDER.completeAuthorization({
         request: oauthReqInfo,
         userId: `fathom-user-${Date.now()}`,
@@ -463,12 +461,12 @@ const defaultHandler = {
       return Response.redirect(redirectTo, 302);
     }
 
-    // Health check (GET / only - POST / is MCP traffic, rewritten below)
+    // Health check (GET / only)
     if (url.pathname === "/health" || (url.pathname === "/" && request.method === "GET")) {
       return new Response(
         JSON.stringify({
           name: "fathom-mcp",
-          version: "2.0.0",
+          version: "2.1.0",
           status: "ok",
           transport: "streamable-http",
         }),
