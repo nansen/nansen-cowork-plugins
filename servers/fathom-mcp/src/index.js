@@ -2,14 +2,13 @@
  * Fathom MCP Server - Cloudflare Workers (Remote)
  *
  * A remote MCP server that proxies Fathom.video API calls.
- * Users connect via Streamable HTTP and pass their own Fathom API key
- * as a Bearer token in the Authorization header.
+ * Uses McpAgent (Durable Objects) for stateful MCP sessions.
  *
  * Endpoint: /mcp (Streamable HTTP transport)
  */
 
+import { McpAgent } from "agents/mcp";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { createMcpHandler } from "agents/mcp";
 import { z } from "zod";
 
 const FATHOM_API_BASE = "https://api.fathom.ai/external/v1";
@@ -37,15 +36,21 @@ async function fathomFetch(apiKey, path, params = {}) {
   return res.json();
 }
 
-// -- MCP Handler (stateless, no Durable Objects needed) --
+// -- MCP Agent (Durable Object) --
 
-const mcpHandler = createMcpHandler(
-  (server, _env, _ctx) => {
+export class FathomMCP extends McpAgent {
+  server = new McpServer({
+    name: "fathom-mcp",
+    version: "1.0.0",
+  });
+
+  async init() {
     // Tool: list_meetings
-    server.tool(
+    this.server.tool(
       "list_meetings",
       "List recent Fathom meetings. Returns meeting ID, title, date, duration, and participants.",
       {
+        api_key: z.string().describe("Your Fathom API key"),
         created_after: z
           .string()
           .optional()
@@ -64,11 +69,14 @@ const mcpHandler = createMcpHandler(
           .optional()
           .default(20)
           .describe("Max meetings to return (default: 20)"),
-        api_key: z
-          .string()
-          .describe("Your Fathom API key"),
       },
-      async ({ created_after, created_before, include_transcript, limit, api_key }) => {
+      async ({
+        api_key,
+        created_after,
+        created_before,
+        include_transcript,
+        limit,
+      }) => {
         if (!api_key) {
           return {
             content: [
@@ -129,10 +137,11 @@ const mcpHandler = createMcpHandler(
     );
 
     // Tool: get_transcript
-    server.tool(
+    this.server.tool(
       "get_transcript",
       "Get the full transcript for a specific Fathom meeting. Returns speaker-attributed transcript text.",
       {
+        api_key: z.string().describe("Your Fathom API key"),
         meeting_id: z.string().describe("The meeting ID (from list_meetings)"),
         recording_id: z
           .string()
@@ -140,11 +149,8 @@ const mcpHandler = createMcpHandler(
           .describe(
             "Optional recording ID if the meeting has multiple recordings"
           ),
-        api_key: z
-          .string()
-          .describe("Your Fathom API key"),
       },
-      async ({ meeting_id, recording_id, api_key }) => {
+      async ({ api_key, meeting_id, recording_id }) => {
         if (!api_key) {
           return {
             content: [
@@ -219,16 +225,14 @@ const mcpHandler = createMcpHandler(
     );
 
     // Tool: get_meeting_details
-    server.tool(
+    this.server.tool(
       "get_meeting_details",
       "Get full details for a specific Fathom meeting including summary, action items, and metadata.",
       {
+        api_key: z.string().describe("Your Fathom API key"),
         meeting_id: z.string().describe("The meeting ID (from list_meetings)"),
-        api_key: z
-          .string()
-          .describe("Your Fathom API key"),
       },
-      async ({ meeting_id, api_key }) => {
+      async ({ api_key, meeting_id }) => {
         if (!api_key) {
           return {
             content: [
@@ -261,15 +265,12 @@ const mcpHandler = createMcpHandler(
         }
       }
     );
-  },
-  {
-    name: "fathom-mcp",
-    version: "1.0.0",
-  },
-  "/mcp"
-);
+  }
+}
 
 // -- Worker entry point --
+// Use McpAgent.serve() to handle the MCP protocol via Durable Objects
+const mcpWorker = FathomMCP.serve("/mcp", { binding: "MCP_OBJECT" });
 
 export default {
   async fetch(request, env, ctx) {
@@ -291,11 +292,7 @@ export default {
       );
     }
 
-    // MCP endpoint
-    if (url.pathname === "/mcp") {
-      return mcpHandler(request, env, ctx);
-    }
-
-    return new Response("Not found", { status: 404 });
+    // Delegate MCP requests to the McpAgent serve handler
+    return mcpWorker.fetch(request, env, ctx);
   },
 };
