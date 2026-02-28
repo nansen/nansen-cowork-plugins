@@ -1,17 +1,11 @@
 name = "fathom-mcp"
 main = "src/index.js"
 compatibility_date = "2025-04-01"
-compatibility_flags = ["nodejs_compat"]
+compatibility_flags = ["nodejs_compat", "global_fetch_strictly_public"]
 
-[durable_objects]
-bindings = [
-  { name = "MCP_OBJECT", class_name = "FathomMCP" }
-]
-
-# v1 was the original migration that created the class
-[[migrations]]
-tag = "v1"
-new_sqlite_classes = ["FathomMCP"]
-
-[observability]
-enabled = true
+# KV namespace for OAuth token storage
+# Create with: wrangler kv namespace create OAUTH_KV
+# Then paste the ID below
+[[kv_namespaces]]
+binding = "OAUTH_KV"
+id = "REPLACE_WITH_YOUR_KV_NAMESPACE_ID"

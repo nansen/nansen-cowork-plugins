@@ -1,16 +1,17 @@
 {
   "name": "fathom-mcp-remote",
-  "version": "1.0.0",
-  "description": "Remote Fathom MCP server for Nansen - deployed on Cloudflare Workers",
+  "version": "2.0.0",
+  "description": "Remote Fathom MCP server with OAuth 2.1 - deployed on Cloudflare Workers",
   "type": "module",
   "scripts": {
     "dev": "wrangler dev",
     "deploy": "wrangler deploy",
-    "start": "wrangler dev",
     "tail": "wrangler tail"
   },
   "dependencies": {
-    "agents": "^0.5.0",
+    "@cloudflare/workers-oauth-provider": "^0.1.0",
+    "@modelcontextprotocol/sdk": "^1.12.1",
+    "agents": "^0.6.0",
     "zod": "^3.24.0"
   },
   "devDependencies": {
