@@ -104,9 +104,10 @@ function buildMcpServer() {
         if (include_transcript) params.include_transcript = "true";
 
         const data = await fathomFetch(apiKey, "/meetings", params);
+        console.log("[list_meetings] Raw Fathom API response keys:", Object.keys(data), "items count:", data.items?.length);
         const meetings = Array.isArray(data)
           ? data
-          : data.meetings || data.data || [];
+          : data.items || data.meetings || data.data || [];
         const sliced = meetings.slice(0, limit);
 
         const summary = sliced.map((m) => ({
