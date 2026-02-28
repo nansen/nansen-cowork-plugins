@@ -1,10 +1,10 @@
 {
   "mcpServers": {
     "fathom": {
-      "command": "node",
-      "args": ["${CLAUDE_PLUGIN_ROOT}/servers/fathom/server.mjs"],
-      "env": {
-        "FATHOM_API_KEY": "${FATHOM_API_KEY}"
+      "type": "http",
+      "url": "https://fathom-mcp.nansen-opal-tools.workers.dev/mcp",
+      "headers": {
+        "Authorization": "Bearer ${FATHOM_API_KEY}"
       }
     }
   }

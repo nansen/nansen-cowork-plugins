@@ -50,42 +50,13 @@ Confirm the connector is working by running a quick test search against Google D
 
 **Note on intelligence sharing (future):** For the POC, intelligence files stay in the local intelligence/ folder. Syncing intelligence files to the team's Shared Drive (Nansen > nansen-cowork > intelligence) is a priority item for Phase 2. The approach for sharing extracted knowledge across the team is still being worked out. For now, focus on proving the extraction pipeline works.
 
-## Step 4 -- Fathom connection (optional for POC)
+## Step 4 -- Fathom connection
 
-Fathom (https://fathom.video) records and transcribes meetings. nansen-core includes a bundled Fathom MCP server that provides `list_meetings`, `get_transcript`, and `get_meeting_details` tools.
+Fathom (https://fathom.video) records and transcribes meetings. The nansen-core plugin includes a remote Fathom MCP server hosted on Cloudflare Workers that provides `list_meetings`, `get_transcript`, and `get_meeting_details` tools. The server is already configured in the plugin's `.mcp.json` -- the only thing needed from the user is their Fathom API key.
 
-### 4a -- Install Fathom MCP server dependencies (automated)
+**No local installation is required.** No Node.js, no npm, no terminal commands. The server runs in the cloud and the plugin connects to it automatically.
 
-The Fathom MCP server is bundled inside the nansen-core plugin. The user does NOT need to touch the terminal for this -- handle it entirely within setup.
-
-**Step-by-step for the setup command to follow:**
-
-1. **Locate the plugin install path.** The Fathom server lives at `servers/fathom/` relative to the nansen-core plugin root. Search for it by checking these locations in order:
-   - `$CLAUDE_PLUGIN_ROOT/servers/fathom/` (if CLAUDE_PLUGIN_ROOT is set)
-   - Look for `servers/fathom/server.mjs` inside any `.local-plugins/` or `.claude/cowork_plugins/` directory tree
-   - As a last resort, search the mounted workspace for `servers/fathom/server.mjs`
-
-2. **Check if dependencies are already installed.** Look for a `node_modules/` directory inside the fathom server folder. If it exists and contains files, skip npm install entirely. The marketplace distribution should include node_modules.
-
-3. **If node_modules is missing, run npm install automatically.** Use:
-   ```bash
-   npm install --prefix [discovered-fathom-path]
-   ```
-   Do this silently -- just tell the user "Setting up the Fathom connector..." and then confirm when done.
-
-4. **If npm or Node.js isn't available**, tell the user in plain language:
-   - "The Fathom connector needs Node.js to run. You can install it from https://nodejs.org/ (just download and run the installer). Once that's done, re-run /setup and I'll handle the rest."
-   - Note this in the config as `fathom_node_available: false` and move on
-
-5. **Verify the server can start** by running the initialization handshake:
-   ```bash
-   echo '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"test","version":"1.0"}}}' | FATHOM_API_KEY="test" timeout 5 node [discovered-path]/server.mjs
-   ```
-   If the response contains `"serverInfo"`, confirm: "Fathom server is installed and ready."
-
-The user should never need to open Terminal, find directories, or run commands manually.
-
-### 4b -- API key setup
+### Collect the API key
 
 **Always explicitly ask the user for their Fathom API key.** Don't skip this silently -- prompt them directly and give them the option to enter it now or skip.
 
@@ -105,14 +76,24 @@ Then ask: "Paste your API key here when you're ready, or type 'skip' if you'd li
 
 Note: Fathom API keys are user-level, which means each person's key only gives access to meetings they recorded or that were shared to their team. Each pilot member will need to generate their own key.
 
-**If they provide a key:**
-- Set `FATHOM_API_KEY` as an environment variable by adding `export FATHOM_API_KEY="their-key"` to `~/.zshrc` (or `~/.bashrc` if they use bash)
-- Store the key reference in the config as `fathom_connected: true, api_key_set: true`
-- Confirm: "Fathom is connected. You can now ask me to list your recent meetings or pull transcripts directly."
+### If they provide a key
 
-**If they skip:**
-- That's fine -- let them know they can always drop transcript files into sources/ manually, and they can re-run /setup later to add the key
-- Note this in the config as `fathom_connected: false, api_key_set: false`
+Save it as an environment variable so the plugin can use it automatically on future sessions:
+
+```bash
+# Add to ~/.zshrc (or ~/.bashrc for bash users)
+echo 'export FATHOM_API_KEY="their-key-here"' >> ~/.zshrc
+```
+
+Tell the user: "I've saved your Fathom API key. You'll need to start a new Cowork session for it to take effect, but from then on Fathom will connect automatically every time."
+
+Store in config: `fathom_connected: true, api_key_set: true`
+
+### If they skip
+
+That's fine -- let them know they can always drop transcript files into sources/ manually, and they can re-run /setup later to add the key.
+
+Store in config: `fathom_connected: false, api_key_set: false`
 
 ## Step 5 -- Slack verification
 
@@ -186,7 +167,7 @@ Setup completed on [date] by [user name].
 ```
 
 3. **Config check**: Read back the config file and confirm it's valid JSON
-4. **Fathom server check**: If Fathom was set up in Step 4a, this was already verified there. Just confirm the result: PASS if the server responded, FAIL if it didn't, SKIPPED if the user opted out.
+4. **Fathom check**: If the user provided an API key in Step 4, note PASS (key saved, will connect on next session). If they skipped, note SKIPPED. No server verification needed here -- the remote server is always running.
 5. **Drive sync note**: If Drive is configured, remind the user to check that the test file appears in their Shared Drive within a minute or two
 
 Present results as a checklist:
