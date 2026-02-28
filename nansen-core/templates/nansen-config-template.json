@@ -20,5 +20,19 @@
   "slack": {
     "mcp_connected": false
   },
+  "sync": {
+    "enabled": true,
+    "last_full_sync": null,
+    "last_slack_sync": {},
+    "last_fathom_sync": null,
+    "slack": {
+      "channels": []
+    },
+    "fathom": {
+      "min_duration_minutes": 5
+    },
+    "scheduled_task_id": null,
+    "preferred_time": null
+  },
   "pilot_group": true
 }

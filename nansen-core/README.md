@@ -24,6 +24,7 @@ nansen-core turns raw source material (meeting transcripts, documents, research)
 | Skill | Purpose |
 |-------|---------|
 | Market Research | Extract market trends, competitive signals, and client intelligence from source documents |
+| Sync | Pull content from Slack and Fathom, filter for signal, and extract intelligence. Runs as initial pull during setup and as a daily scheduled task. |
 
 ## MCP Servers
 

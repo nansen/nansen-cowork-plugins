@@ -1,6 +1,6 @@
 ---
 description: Set up the Nansen intelligence ecosystem for a new team member
-allowed-tools: Read, Write, Edit, Bash(ls:*), Bash(mkdir:*), Bash(cp:*), Bash(find:*), Bash(test:*), Bash(cat:*), Bash(echo:*), Bash(date:*), Bash(python3:*), Bash(npm:*), Bash(node:*)
+allowed-tools: Read, Write, Edit, Bash(ls:*), Bash(mkdir:*), Bash(cp:*), Bash(find:*), Bash(test:*), Bash(cat:*), Bash(echo:*), Bash(date:*), Bash(python3:*), Bash(npm:*), Bash(node:*), Bash(wc:*), slack_search_public, slack_search_public_and_private, slack_read_channel, slack_read_thread, slack_search_channels, slack_search_users, list_meetings, get_transcript, get_meeting_details, create_scheduled_task
 ---
 
 Walk the user through setting up Nansen's intelligence ecosystem on their machine. Follow these steps in order, checking status at each stage before moving on. Be conversational and helpful -- the user may not be technical. Use clear language and explain what each step does and why.
@@ -179,6 +179,75 @@ Present results as a checklist:
 - Fathom API key: CONNECTED/SKIPPED
 - Slack: CONNECTED/SKIPPED
 
+## Step 8 -- Configure Slack channels for sync
+
+If Slack is connected (confirmed in Step 5), set up which channels the daily sync should monitor.
+
+Use `slack_search_channels` to find channels the user is active in. Present a list showing the channel name, purpose/topic, and member count where available.
+
+Say something like: "I can automatically pull intelligence from your Slack channels every day. Which channels should I monitor? These are your active channels -- pick the ones where business discussions happen."
+
+Let the user select channels from the list (they can also type channel names). For each selected channel, store the `channel_id` and `channel_name` in the config under `sync.slack.channels[]`.
+
+Recommend they include channels where:
+- Client discussions happen
+- Strategy and planning conversations occur
+- Business development threads appear
+- Project updates are shared
+
+Recommend they exclude:
+- Social/random channels
+- Channels that are purely automated notifications
+- Very high-volume channels that are mostly noise
+
+Save the selections to the config. If no channels are selected, note that Slack sync will be skipped in the daily task but can be configured later.
+
+If Slack is not connected, skip this step entirely.
+
+## Step 9 -- Initial intelligence pull
+
+Now that connectors are configured and channels are selected, run the first sync to give the user a baseline of intelligence.
+
+Tell the user: "I'm going to pull the past week of content from your connected sources to build your baseline intelligence. This might take a few minutes depending on how active your Slack and Fathom have been."
+
+Invoke the sync skill in initial mode:
+- Read and follow `nansen-core/skills/sync/SKILL.md`
+- Set the lookback window to 7 days
+- Process all configured channels and any Fathom meetings from the past week
+- Run the full filtering and extraction pipeline
+
+When complete, share the summary report from the sync skill. Highlight a few of the intelligence files that were created so the user can see the value immediately.
+
+If no content was found (no Slack messages, no Fathom meetings in the past week), that's fine. Tell the user: "No recent content found to sync, but you're all set. The daily sync will start picking things up from tomorrow."
+
+## Step 10 -- Create daily sync task
+
+Set up the recurring scheduled task that will run every morning.
+
+Ask the user: "What time would you like the daily intelligence sync to run? This pulls new content from Slack and Fathom, filters for the important stuff, and creates intelligence files. Most people set it for sometime before they start work."
+
+Wait for the user to specify a time.
+
+Once they choose a time, create the scheduled task:
+
+1. Read the sync prompt template from `nansen-core/templates/sync-prompt-template.md`
+2. Expand the template variables with actual values from the config:
+   - Replace `{{WORKSPACE_ROOT}}` with the actual workspace root path
+   - Replace `{{SOURCES_PATH}}` with the actual sources path
+   - Replace `{{INTELLIGENCE_PATH}}` with the actual intelligence path
+   - Replace `{{SLACK_CHANNELS_JSON}}` with the JSON array from `sync.slack.channels`
+   - Replace `{{PREFERRED_TIME}}` with the user's chosen time
+   - Replace `{{SCHEMA_PATH}}` with the actual path to intelligence-schema.yaml
+3. Call `create_scheduled_task` with:
+   - `taskId`: "nansen-daily-sync"
+   - `cronExpression`: Convert the user's time to cron format. For weekdays only use `M H * * 1-5`. For every day use `M H * * *`. Default to weekdays unless the user says otherwise.
+   - `prompt`: The expanded template (everything after "Expanded Prompt" in the template)
+   - `description`: "Daily intelligence sync - pulls Slack and Fathom content, extracts intelligence"
+4. Save the task ID to `sync.scheduled_task_id` in the config
+5. Save the preferred time to `sync.preferred_time` in the config
+
+Confirm: "Your daily intelligence sync is set for [time] on weekdays. Each morning it will pull new content from your connected sources, filter for the important stuff, and create intelligence files. You'll see a summary when it runs."
+
 ## Wrap up
 
 End with next steps:
@@ -186,3 +255,5 @@ End with next steps:
 - "Run `/onboarding` for a guided tour of how everything works"
 - "Drop a PDF or transcript into sources/ and ask me to extract intelligence from it"
 - "Ask me to run the Market Research skill on any source file"
+- "Your daily sync runs at [time] -- check your intelligence/ folder tomorrow morning for fresh insights"
+- "Want to change which Slack channels are monitored? Just ask me to update the sync config."
