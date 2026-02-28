@@ -463,8 +463,8 @@ const defaultHandler = {
       return Response.redirect(redirectTo, 302);
     }
 
-    // Health check
-    if (url.pathname === "/" || url.pathname === "/health") {
+    // Health check (GET / only - POST / is MCP traffic, rewritten below)
+    if (url.pathname === "/health" || (url.pathname === "/" && request.method === "GET")) {
       return new Response(
         JSON.stringify({
           name: "fathom-mcp",
@@ -481,10 +481,15 @@ const defaultHandler = {
 };
 
 // ─────────────────────────────────────────────
-//  Export: OAuthProvider wraps everything
+//  Export: OAuthProvider with URL rewrite
+//
+//  Cowork sends MCP traffic to POST / but our
+//  apiRoute is "/mcp" (to avoid catching /authorize).
+//  We wrap the provider and rewrite POST / -> POST /mcp
+//  before it hits the router.
 // ─────────────────────────────────────────────
 
-export default new OAuthProvider({
+const provider = new OAuthProvider({
   apiRoute: "/mcp",
   apiHandler: FathomMCP,
   defaultHandler,
@@ -493,3 +498,20 @@ export default new OAuthProvider({
   clientRegistrationEndpoint: "/register",
   scopesSupported: ["read"],
 });
+
+export default {
+  async fetch(request, env, ctx) {
+    const url = new URL(request.url);
+
+    // Rewrite POST / to POST /mcp so OAuthProvider routes it
+    // to the apiHandler (FathomMCP) instead of defaultHandler.
+    // This covers both the initial unauthenticated request (which
+    // triggers 401 -> OAuth flow) and authenticated MCP calls.
+    if (url.pathname === "/" && request.method === "POST") {
+      url.pathname = "/mcp";
+      request = new Request(url.toString(), request);
+    }
+
+    return provider.fetch(request, env, ctx);
+  },
+};
