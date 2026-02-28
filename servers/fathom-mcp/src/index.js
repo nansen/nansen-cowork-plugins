@@ -503,11 +503,16 @@ export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
 
-    // Rewrite POST / to POST /mcp so OAuthProvider routes it
-    // to the apiHandler (FathomMCP) instead of defaultHandler.
-    // This covers both the initial unauthenticated request (which
-    // triggers 401 -> OAuth flow) and authenticated MCP calls.
-    if (url.pathname === "/" && request.method === "POST") {
+    // Cowork sends MCP traffic to POST / but apiRoute is "/mcp".
+    // Only rewrite when the request has an Authorization header
+    // (i.e. post-OAuth MCP calls). Unauthenticated POST / hits
+    // the defaultHandler health check, which returns 200 and
+    // lets Cowork discover OAuth naturally.
+    if (
+      url.pathname === "/" &&
+      request.method === "POST" &&
+      request.headers.has("authorization")
+    ) {
       url.pathname = "/mcp";
       request = new Request(url.toString(), request);
     }
