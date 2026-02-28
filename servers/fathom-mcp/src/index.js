@@ -275,12 +275,42 @@ function buildMcpServer() {
 
 export class FathomMCP extends WorkerEntrypoint {
   async fetch(request) {
+    // Trace: log what the apiHandler receives
+    const url = new URL(request.url);
+    const bodyClone = await request.clone().text();
+    console.log("[FathomMCP] Received request:", {
+      method: request.method,
+      pathname: url.pathname,
+      hasAuth: request.headers.has("authorization"),
+      bodyPreview: bodyClone.substring(0, 500),
+      propsKeys: this.ctx?.props ? Object.keys(this.ctx.props) : "no-props",
+    });
+
     // Build a fresh McpServer per request (required for stateless handlers -
     // createMcpHandler connects the server to a transport, and a connected
     // server cannot be reused).
     const server = buildMcpServer();
     const handler = createMcpHandler(server, { route: "/mcp" });
-    return handler(request, this.env, this.ctx);
+
+    // Re-create request from cloned body since we consumed it
+    const freshRequest = new Request(request.url, {
+      method: request.method,
+      headers: request.headers,
+      body: bodyClone,
+    });
+
+    const response = await handler(freshRequest, this.env, this.ctx);
+
+    // Trace: log what the handler returned
+    const respClone = response.clone();
+    const respBody = await respClone.text();
+    console.log("[FathomMCP] Response:", {
+      status: response.status,
+      contentType: response.headers.get("content-type"),
+      bodyPreview: respBody.substring(0, 500),
+    });
+
+    return response;
   }
 }
 
@@ -506,11 +536,14 @@ export default {
     // (i.e. post-OAuth MCP calls). Unauthenticated POST / hits
     // the defaultHandler health check, which returns 200 and
     // lets Cowork discover OAuth naturally.
+    const hasAuth = request.headers.has("authorization");
+    console.log("[Entrypoint]", request.method, url.pathname, { hasAuth });
     if (
       url.pathname === "/" &&
       request.method === "POST" &&
-      request.headers.has("authorization")
+      hasAuth
     ) {
+      console.log("[Entrypoint] Rewriting POST / -> POST /mcp");
       url.pathname = "/mcp";
       request = new Request(url.toString(), request);
     }
