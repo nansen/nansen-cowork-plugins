@@ -2,10 +2,7 @@
   "mcpServers": {
     "fathom": {
       "type": "http",
-      "url": "https://fathom-mcp.nansen-opal-tools.workers.dev/mcp",
-      "headers": {
-        "Authorization": "Bearer ${FATHOM_API_KEY}"
-      }
+      "url": "https://fathom-mcp.nansen-opal-tools.workers.dev/mcp"
     }
   }
 }
