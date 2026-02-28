@@ -5,14 +5,11 @@
  * Users connect via Streamable HTTP and pass their own Fathom API key
  * as a Bearer token in the Authorization header.
  *
- * Endpoint: POST /mcp (Streamable HTTP transport)
- *
- * Authentication: Users set their Fathom API key as a custom header
- * or Bearer token when adding this as a connector in Cowork.
+ * Endpoint: /mcp (Streamable HTTP transport)
  */
 
-import { McpAgent } from "agents/mcp";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { createMcpHandler } from "agents/mcp";
 import { z } from "zod";
 
 const FATHOM_API_BASE = "https://api.fathom.ai/external/v1";
@@ -40,17 +37,12 @@ async function fathomFetch(apiKey, path, params = {}) {
   return res.json();
 }
 
-// -- MCP Agent (Durable Object) --
+// -- MCP Handler (stateless, no Durable Objects needed) --
 
-export class FathomMCP extends McpAgent {
-  server = new McpServer({
-    name: "fathom-remote",
-    version: "1.0.0",
-  });
-
-  async init() {
+const mcpHandler = createMcpHandler(
+  (server, _env, _ctx) => {
     // Tool: list_meetings
-    this.server.tool(
+    server.tool(
       "list_meetings",
       "List recent Fathom meetings. Returns meeting ID, title, date, duration, and participants.",
       {
@@ -72,15 +64,17 @@ export class FathomMCP extends McpAgent {
           .optional()
           .default(20)
           .describe("Max meetings to return (default: 20)"),
+        api_key: z
+          .string()
+          .describe("Your Fathom API key"),
       },
-      async ({ created_after, created_before, include_transcript, limit }) => {
-        const apiKey = this.props?.fathomApiKey;
-        if (!apiKey) {
+      async ({ created_after, created_before, include_transcript, limit, api_key }) => {
+        if (!api_key) {
           return {
             content: [
               {
                 type: "text",
-                text: "No Fathom API key provided. Add your key in the connector settings.",
+                text: "No Fathom API key provided. Please pass your api_key parameter.",
               },
             ],
             isError: true,
@@ -93,7 +87,7 @@ export class FathomMCP extends McpAgent {
           if (created_before) params.created_before = created_before;
           if (include_transcript) params.include_transcript = "true";
 
-          const data = await fathomFetch(apiKey, "/meetings", params);
+          const data = await fathomFetch(api_key, "/meetings", params);
           const meetings = Array.isArray(data)
             ? data
             : data.meetings || data.data || [];
@@ -135,7 +129,7 @@ export class FathomMCP extends McpAgent {
     );
 
     // Tool: get_transcript
-    this.server.tool(
+    server.tool(
       "get_transcript",
       "Get the full transcript for a specific Fathom meeting. Returns speaker-attributed transcript text.",
       {
@@ -143,16 +137,20 @@ export class FathomMCP extends McpAgent {
         recording_id: z
           .string()
           .optional()
-          .describe("Optional recording ID if the meeting has multiple recordings"),
+          .describe(
+            "Optional recording ID if the meeting has multiple recordings"
+          ),
+        api_key: z
+          .string()
+          .describe("Your Fathom API key"),
       },
-      async ({ meeting_id, recording_id }) => {
-        const apiKey = this.props?.fathomApiKey;
-        if (!apiKey) {
+      async ({ meeting_id, recording_id, api_key }) => {
+        if (!api_key) {
           return {
             content: [
               {
                 type: "text",
-                text: "No Fathom API key provided. Add your key in the connector settings.",
+                text: "No Fathom API key provided. Please pass your api_key parameter.",
               },
             ],
             isError: true,
@@ -165,11 +163,11 @@ export class FathomMCP extends McpAgent {
 
           try {
             transcript = await fathomFetch(
-              apiKey,
+              api_key,
               `/recordings/${rid}/transcript`
             );
           } catch {
-            transcript = await fathomFetch(apiKey, `/meetings/${meeting_id}`, {
+            transcript = await fathomFetch(api_key, `/meetings/${meeting_id}`, {
               include_transcript: "true",
             });
           }
@@ -221,20 +219,22 @@ export class FathomMCP extends McpAgent {
     );
 
     // Tool: get_meeting_details
-    this.server.tool(
+    server.tool(
       "get_meeting_details",
       "Get full details for a specific Fathom meeting including summary, action items, and metadata.",
       {
         meeting_id: z.string().describe("The meeting ID (from list_meetings)"),
+        api_key: z
+          .string()
+          .describe("Your Fathom API key"),
       },
-      async ({ meeting_id }) => {
-        const apiKey = this.props?.fathomApiKey;
-        if (!apiKey) {
+      async ({ meeting_id, api_key }) => {
+        if (!api_key) {
           return {
             content: [
               {
                 type: "text",
-                text: "No Fathom API key provided. Add your key in the connector settings.",
+                text: "No Fathom API key provided. Please pass your api_key parameter.",
               },
             ],
             isError: true,
@@ -242,7 +242,7 @@ export class FathomMCP extends McpAgent {
         }
 
         try {
-          const data = await fathomFetch(apiKey, `/meetings/${meeting_id}`);
+          const data = await fathomFetch(api_key, `/meetings/${meeting_id}`);
           return {
             content: [
               { type: "text", text: JSON.stringify(data, null, 2) },
@@ -261,8 +261,13 @@ export class FathomMCP extends McpAgent {
         }
       }
     );
-  }
-}
+  },
+  {
+    name: "fathom-mcp",
+    version: "1.0.0",
+  },
+  "/mcp"
+);
 
 // -- Worker entry point --
 
@@ -286,19 +291,9 @@ export default {
       );
     }
 
-    // Extract Fathom API key from Authorization header
-    // Users set this when adding the connector in Cowork
-    const authHeader = request.headers.get("Authorization") || "";
-    const fathomApiKey = authHeader.startsWith("Bearer ")
-      ? authHeader.slice(7).trim()
-      : authHeader.trim();
-
-    // MCP endpoint - delegate to Durable Object
+    // MCP endpoint
     if (url.pathname === "/mcp") {
-      // Pass the API key through to the McpAgent via props
-      return FathomMCP.serveFromWorker(env.FATHOM_MCP, "/mcp", request, {
-        fathomApiKey,
-      });
+      return mcpHandler(request, env, ctx);
     }
 
     return new Response("Not found", { status: 404 });
