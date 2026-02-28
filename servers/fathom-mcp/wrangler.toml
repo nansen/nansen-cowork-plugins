@@ -3,9 +3,20 @@ main = "src/index.js"
 compatibility_date = "2025-04-01"
 compatibility_flags = ["nodejs_compat", "global_fetch_strictly_public"]
 
-# KV namespace for OAuth token storage
-# Create with: wrangler kv namespace create OAUTH_KV
-# Then paste the ID below
+# v1 was the original migration that created the class
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["FathomMCP"]
+
+# v2 removes the Durable Object (replaced by OAuthProvider + WorkerEntrypoint)
+[[migrations]]
+tag = "v2"
+deleted_classes = ["FathomMCP"]
+
+# OAuth token storage
 [[kv_namespaces]]
 binding = "OAUTH_KV"
 id = "54ab7100dc084a7f88c5b3343b5a8871"
+
+[observability]
+enabled = true
