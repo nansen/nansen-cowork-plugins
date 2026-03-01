@@ -18,6 +18,7 @@ nansen-core turns raw source material (meeting transcripts, documents, research)
 |---------|---------|
 | `/setup` | Technical environment setup (folders, Drive, Fathom, Slack) |
 | `/onboarding` | Guided walkthrough for new team members (~25 min) |
+| `/feedback` | Capture plugin feedback -- feature requests, gaps, improvements, bugs. Posts to #plugin-feedback in Slack. Also triggered by session detection (see CLAUDE.md). |
 
 ## Skills
 
@@ -40,6 +41,7 @@ Requires `FATHOM_API_KEY` environment variable. Run `npm install` in `servers/fa
 nansen/
   sources/        Raw input (transcripts, PDFs, notes) -- local only
   intelligence/   Extracted knowledge -- syncs to Google Drive
+  feedback/       Plugin feedback from team members -- syncs to Google Drive
   outputs/        Generated deliverables -- local only
 ```
 

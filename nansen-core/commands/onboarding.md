@@ -117,6 +117,7 @@ Wrap up with a reference guide:
 **Commands you can use:**
 - `/setup` -- Re-run the technical setup if you need to reconfigure anything
 - `/onboarding` -- Come back to this walkthrough anytime
+- `/feedback` -- Tell us about something that could be better, a feature you'd like, or a bug you hit
 
 **Skills available:**
 - Market Research -- Extract insights from any document or transcript
@@ -129,7 +130,7 @@ Wrap up with a reference guide:
 **Need help?**
 - Just ask me anything -- I can explain how things work, help you find intelligence, or process new source files
 - For technical issues, check with your team lead
-- Feedback is welcome -- if something doesn't work the way you'd expect, let us know so we can improve"
+- Feedback is welcome -- just say `/feedback` or tell me "I wish it could..." and I'll capture it for the team"
 
 End on an encouraging note:
 

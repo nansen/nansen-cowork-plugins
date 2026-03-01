@@ -115,6 +115,48 @@ These values can be adjusted based on experience:
 | `lookback_days_initial` | 7 | Days of history for initial pull |
 | `lookback_hours_daily` | 26 | Hours of lookback for daily sync (26h for timezone overlap) |
 
+## Plugin Feedback Signals (Passive Detection)
+
+In addition to intelligence extraction, the sync should watch for messages that contain implicit feedback about the Nansen plugin ecosystem. These are messages where someone mentions a plugin or skill alongside language that suggests a gap, wish, or issue.
+
+### Detection Rules
+
+Flag a message as a **plugin signal** if it meets BOTH conditions:
+
+1. **Mentions a plugin or skill by name**: "budget pulse", "market research", "intelligence sync", "nansen-core", "nansen-growth", "nansen-delivery", "/setup", "/onboarding", "/feedback", or any known skill name.
+
+2. **Contains feedback language** from any of these categories:
+
+**Wish language**: "wish", "would be nice", "it would be great if", "I'd love it if", "can it", "could it", "what if it", "imagine if", "be cool if"
+
+**Gap language**: "can't", "doesn't", "no way to", "couldn't figure out", "not possible", "missing", "there's no", "how do I", "is there a way"
+
+**Workaround language**: "manually", "workaround", "instead I had to", "ended up doing", "hack", "bodge", "by hand", "the long way"
+
+**Improvement language**: "better if", "faster if", "easier if", "more useful if", "could improve", "almost", "close but", "nearly there"
+
+**Bug language**: "broke", "broken", "error", "wrong", "weird", "unexpected", "didn't work", "failed", "crashed"
+
+### What To Do With Plugin Signals
+
+When a message matches these rules:
+
+1. Save it as a source file with `source_type: plugin-signal` in the frontmatter
+2. Do NOT run full market-research extraction on it
+3. Instead, create a lightweight feedback file in `nansen/feedback/` using the feedback template
+4. Set the feedback file's `feedback_type` based on the language category that triggered:
+   - Wish/gap language -> `feature-request` or `gap`
+   - Workaround language -> `gap`
+   - Improvement language -> `improvement`
+   - Bug language -> `bug`
+5. Set `submitted_by` to the Slack user who wrote the message
+6. Set `priority` to `low` (passive signals are lower confidence than explicit /feedback submissions)
+7. Add a note in the feedback file: "Auto-detected from Slack -- not explicitly submitted as feedback. Verify with the user before acting on this."
+
+### Channels to Monitor for Plugin Signals
+
+Apply plugin signal detection to ALL monitored channels, not just a dedicated feedback channel. People talk about their tools wherever they happen to be working.
+
 ## Common False Positives
 
 Watch for these patterns that look like signal but aren't:
