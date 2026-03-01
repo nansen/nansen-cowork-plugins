@@ -8,6 +8,7 @@ Private Cowork plugin marketplace for the Nansen team. Contains domain-specific 
 |--------|-------------|---------|
 | **nansen-core** | Shared intelligence foundation. Extract, structure, and sync domain knowledge. Includes /setup, /onboarding, and Market Research skill. | 0.1.0 |
 | **nansen-growth** | Growth domain plugin. Proactive industry research and solutions positioning for business development. | 0.1.0 |
+| **nansen-delivery** | Project delivery and operations. Budget tracking, retainer health, and team utilization for PMs and client directors. | 0.1.0 |
 
 ## Setup for Team Members
 
@@ -66,6 +67,7 @@ This marketplace is Tier 1 (nansen-core) and Tier 2 (domain plugins) of Nansen's
 ```
 Tier 1: nansen-core        - shared schema, extraction, /setup, /onboarding
 Tier 2: nansen-growth      - industry research, solutions positioning
+        nansen-delivery    - budget tracking, retainer health, utilization
         nansen-[domain]    - future domain plugins
 Tier 3: nansen-arnold      - personal workflows (separate repo)
 ```

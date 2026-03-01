@@ -1,0 +1,14 @@
+{
+  "name": "nansen-delivery",
+  "version": "0.1.0",
+  "description": "Project delivery and operations tools for Nansen. Budget tracking, retainer health, and team utilization for project managers and client directors.",
+  "author": "Nansen",
+  "keywords": [
+    "budget",
+    "delivery",
+    "retainer",
+    "utilization",
+    "scoro",
+    "project-management"
+  ]
+}
