@@ -1,0 +1,16 @@
+{
+  "name": "nansen-agent-studio",
+  "version": "0.1.0",
+  "description": "Developer tools for building Optimizely Opal agents. Schema validation, CLEAR prompt framework, agent spec builder, and onboarding for new developers.",
+  "author": {
+    "name": "Nansen"
+  },
+  "keywords": [
+    "opal",
+    "agents",
+    "optimizely",
+    "developer-tools",
+    "agent-builder",
+    "workflows"
+  ]
+}
