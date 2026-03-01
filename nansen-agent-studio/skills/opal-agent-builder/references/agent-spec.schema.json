@@ -1,0 +1,232 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://nansen.com/opal/agent-spec/v1",
+  "title": "Optimizely Opal Agent Spec",
+  "description": "Schema for Nansen's portable Opal agent definitions. Validates agent specs for use across clients, GitHub storage, and Opal import.",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "agent_type",
+    "name",
+    "agent_id",
+    "version",
+    "description",
+    "prompt_template",
+    "parameters",
+    "output",
+    "enabled_tools"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "description": "Schema version for this spec format.",
+      "enum": ["1.0"]
+    },
+    "agent_type": {
+      "type": "string",
+      "description": "Opal agent construct type.",
+      "enum": ["specialized", "workflow", "instruction"]
+    },
+    "name": {
+      "type": "string",
+      "description": "Human-readable display name shown in Opal UI. Convention: [Team - Solution] Agent Name.",
+      "minLength": 1
+    },
+    "agent_id": {
+      "type": "string",
+      "description": "Stable machine identifier. Convention: <Solution>_<AgentName> (e.g. ActivityNotes_InventoryBuilder).",
+      "pattern": "^[A-Za-z][A-Za-z0-9_]+$"
+    },
+    "version": {
+      "type": "string",
+      "description": "Semantic version of this agent definition.",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$"
+    },
+    "description": {
+      "type": "string",
+      "description": "2-5 sentence description of the agent's purpose and functionality."
+    },
+    "prompt_template": {
+      "type": "string",
+      "description": "Full CLEAR-structured prompt template with [[variable]] placeholders."
+    },
+    "parameters": {
+      "type": "array",
+      "description": "Agent input variables.",
+      "items": {
+        "type": "object",
+        "required": ["name", "type", "required", "description"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Variable name matching [[name]] in prompt_template."
+          },
+          "type": {
+            "type": "string",
+            "description": "Opal parameter type. IMPORTANT: Opal only accepts these four types on import. For array/list data, use 'object' (Opal treats complex JSON inputs as objects) or 'string' (pass as serialized JSON string).",
+            "enum": ["string", "number", "boolean", "object"]
+          },
+          "default": {
+            "description": "Default value. Null means no default."
+          },
+          "required": {
+            "type": "boolean",
+            "description": "Whether the parameter must be provided at runtime."
+          },
+          "description": {
+            "type": "string",
+            "description": "What this parameter represents and how it's used."
+          }
+        }
+      }
+    },
+    "output": {
+      "type": "object",
+      "required": ["type"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "description": "Output data type.",
+          "enum": ["json", "text", "file"]
+        },
+        "schema": {
+          "type": "object",
+          "description": "JSON shape the agent must produce. Keys are field names, values describe types."
+        },
+        "description": {
+          "type": ["string", "null"],
+          "description": "What the output is used for downstream."
+        }
+      }
+    },
+    "enabled_tools": {
+      "type": "array",
+      "description": "Opal tools (verbs) this agent requires.",
+      "items": {
+        "type": "string"
+      }
+    },
+    "inference_type": {
+      "type": "string",
+      "description": "Opal inference level setting. 'simple' = 1 tool call max. 'standard' = multi-step. 'advanced' = most capable.",
+      "enum": ["simple", "standard", "advanced"]
+    },
+    "creativity": {
+      "type": "number",
+      "description": "Opal creativity setting (0.0 = deterministic, 1.0 = maximum creativity).",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "file_urls": {
+      "type": "array",
+      "description": "Reference files attached to this agent.",
+      "items": {
+        "type": "string",
+        "format": "uri"
+      }
+    },
+    "is_active": {
+      "type": "boolean",
+      "description": "Whether this agent definition is active (not archived)."
+    },
+    "is_deleted": {
+      "type": "boolean",
+      "description": "Soft-delete flag."
+    },
+    "is_enabled_in_chat": {
+      "type": "boolean",
+      "description": "Whether the agent appears in Opal chat for end users. Set false for workflow-only specialized agents."
+    },
+    "internal_version": {
+      "type": "integer",
+      "description": "Opal's internal revision counter (auto-incremented on save in Opal UI). Never hand-edit."
+    },
+    "agent_metadata": {
+      "description": "For workflows: contains edges and nodes for the visual editor. For specialized: null. Conditional steps generate additional condition nodes here."
+    },
+    "samples": {
+      "type": "array",
+      "description": "Example executions for testing and validation.",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "input_parameters": {
+            "type": "object"
+          },
+          "output": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "_nansen": {
+      "type": "object",
+      "description": "Nansen-specific metadata not sent to Opal. Stripped by export script.",
+      "properties": {
+        "client": {
+          "type": "string",
+          "description": "Client slug this instance belongs to (matches folder name)."
+        },
+        "template_source": {
+          "type": ["string", "null"],
+          "description": "Template agent_id this was derived from, if any."
+        },
+        "status": {
+          "type": "string",
+          "description": "Development status.",
+          "enum": ["draft", "in-progress", "rc", "review", "production", "deprecated"]
+        },
+        "owner": {
+          "type": "string",
+          "description": "Nansen team member responsible."
+        },
+        "tags": {
+          "type": "array",
+          "description": "Freeform tags for grouping and search.",
+          "items": {
+            "type": "string"
+          }
+        },
+        "last_synced_to_opal": {
+          "type": ["string", "null"],
+          "description": "ISO 8601 timestamp of last push to Opal instance.",
+          "format": "date-time"
+        },
+        "notes": {
+          "type": ["string", "null"],
+          "description": "Version history in reverse chronological order. E.g., 'v0.2.0: Fixed X.\\nv0.1.0: Initial.'"
+        },
+        "rc_date": {
+          "type": ["string", "null"],
+          "description": "Date the agent entered RC status (YYYY-MM-DD format).",
+          "format": "date"
+        }
+      }
+    }
+  },
+  "_workflow_step_types": {
+    "description": "Reference for workflow step types used in the steps array. Not part of the agent schema itself.",
+    "specialized": {
+      "required_fields": ["step_id", "step_type", "name", "description", "agent_id", "parameters_schema", "next_step_id", "timeout_seconds"],
+      "step_type_value": "specialized"
+    },
+    "for_loop": {
+      "required_fields": ["step_id", "step_type", "name", "description", "items_source", "item_name", "max_iterations", "parallel", "child_steps", "next_step_id", "timeout_seconds"],
+      "step_type_value": "for_loop"
+    },
+    "conditional": {
+      "required_fields": ["step_id", "step_type", "name", "description", "evaluator_agent_id", "parameters_schema", "conditions", "timeout_seconds"],
+      "step_type_value": "conditional",
+      "notes": "parameters_schema should be null (not {}). No next_step_id — routing is handled by conditions.",
+      "condition_fields": {
+        "matching_condition": "String pattern to match against evaluator output",
+        "match_type": "equals or not_equals",
+        "target_step_id": "UUID of the step to execute if condition matches",
+        "priority": "Evaluation order (lower = first). Opal often sets all to 0."
+      }
+    }
+  }
+}

@@ -13,6 +13,16 @@
       "name": "nansen-growth",
       "source": "./nansen-growth",
       "description": "Growth domain plugin for business development. Proactive industry research and solutions positioning that maps client needs to Nansen capabilities."
+    },
+    {
+      "name": "nansen-delivery",
+      "source": "./nansen-delivery",
+      "description": "Delivery domain plugin for project management. Budget pulse health checks, retainer utilisation tracking, and team allocation monitoring via Scoro."
+    },
+    {
+      "name": "nansen-agent-studio",
+      "source": "./nansen-agent-studio",
+      "description": "Developer tools for building Optimizely Opal agents. Schema validation, CLEAR prompt framework, agent spec builder, and onboarding for new developers."
     }
   ]
 }

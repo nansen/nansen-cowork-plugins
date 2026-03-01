@@ -1,0 +1,32 @@
+{
+  "schema_version": "1.0",
+  "agent_type": "specialized",
+  "name": "",
+  "agent_id": "",
+  "version": "0.1.0",
+  "description": "",
+  "prompt_template": "### **Context**\n\nYou are a [[role]] agent. Your job is to [[primary_objective]].\n\n### **Logic**\n\n1. [[step_1]]\n2. [[step_2]]\n3. [[step_3]]\n\n### **Expectations**\n\n- Output must be valid JSON and match the schema exactly.\n- [[quality_expectation_1]]\n- [[quality_expectation_2]]\n\n### **Actions**\n\n- [[action_1]]\n- [[action_2]]\n\n### **Refinement**\n\nIf [[failure_condition]], return a structured error with a reason and do not return partial results.",
+  "parameters": [],
+  "output": {
+    "type": "json",
+    "schema": {},
+    "description": ""
+  },
+  "enabled_tools": [],
+  "inference_type": "simple",
+  "creativity": 0.1,
+  "file_urls": [],
+  "is_active": true,
+  "is_deleted": false,
+  "is_enabled_in_chat": true,
+  "internal_version": 1,
+  "agent_metadata": null,
+  "_nansen": {
+    "client": "",
+    "template_source": null,
+    "status": "draft",
+    "owner": "",
+    "tags": [],
+    "last_synced_to_opal": null
+  }
+}
