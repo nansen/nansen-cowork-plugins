@@ -1,7 +1,7 @@
 {
   "name": "nansen-growth",
-  "version": "0.1.0",
-  "description": "Growth domain plugin for Nansen. Proactive industry research, client needs analysis, and solutions positioning. Built on nansen-core's intelligence infrastructure.",
+  "version": "0.2.0",
+  "description": "Growth domain plugin for Nansen. Industry research, solutions positioning, account scoring, and growth tracker management for the Client Development Playbook. Built on nansen-core's intelligence infrastructure.",
   "author": {
     "name": "Nansen"
   },
@@ -10,6 +10,10 @@
     "industry-research",
     "solutions-positioning",
     "sales-intelligence",
-    "business-development"
+    "business-development",
+    "account-scoring",
+    "client-tiering",
+    "growth-tracker",
+    "playbook"
   ]
 }

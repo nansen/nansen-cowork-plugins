@@ -47,7 +47,7 @@ Start with a warm welcome and set expectations:
 > "Welcome to Agent Studio! Over the next 30 or so minutes, you're going to build a real agent pipeline that you can import into Opal and run. We'll start simple — one agent — and work up to a multi-agent workflow. I'll guide you through the same process we use for client work. First, what's your name? I'll set up your workspace."
 
 Then:
-- Create `opal-agents/clients/onboarding-<name>/agents/` and `docs/` folders
+- Create `nansen-working-agents/clients/onboarding-<name>/agents/` and `docs/` folders
 - Copy the progress checklist from `templates/onboarding-checklist.md` to their docs folder
 - Briefly explain the repo structure: clients → agents → exports, and how `_nansen` metadata works
 
@@ -263,7 +263,7 @@ Walk through what they built and how it maps to real work:
 **Next steps to suggest:**
 1. Import and run in the Opal sandbox with 2-3 test URLs
 2. Try adding a feature: "Add a `max_urls` parameter to limit processing" — this teaches the iteration loop
-3. Read the Road Scholar Activity Notes Audit docs (`clients/road-scholar/docs/activity-notes-audit.md`) to see a production-scale example
+3. Read the Road Scholar Activity Notes Audit docs (`nansen-working-agents/clients/road-scholar/docs/activity-notes-audit.md`) to see a production-scale example
 4. Read `references/conversational-patterns.md` to internalize the prompting workflow
 
 **Introduce the conversational patterns:**

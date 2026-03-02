@@ -260,11 +260,59 @@ For each remaining HIGH and MEDIUM source file:
    - Extract across the six dimensions (Market Trends, Competitive Landscape, Client Intel, Industry Insights, Technology Signals, Strategic Implications)
    - Only include dimensions with genuine substance
    - Be specific and attribute insights
-4. Generate the intelligence file with proper YAML frontmatter
-5. Use the deterministic filename: `YYYY-MM-DD_client-slug_source-type_title-slug.intelligence.md`
-6. Write to the intelligence/ folder
+4. **Extract playbook scoring signals** (see 5c-scoring below)
+5. Generate the intelligence file with proper YAML frontmatter including `scoring_signals` and `growth_tracker_signals`
+6. Use the deterministic filename: `YYYY-MM-DD_client-slug_source-type_title-slug.intelligence.md`
+7. Write to the intelligence/ folder
 
 **For MEDIUM signal sources**: Note in the extraction that the source had limited depth. Keep the intelligence file shorter and flag confidence as "medium" or "low".
+
+### 5c-scoring. Playbook Scoring Signal Extraction
+
+While processing each source file, look specifically for signals that map to the Client Development Playbook's six scoring criteria and Growth Tracker fields. This step runs alongside the normal six-dimension extraction -- it adds structured tags to the intelligence file, not a separate output.
+
+**Scoring criteria signals to detect:**
+
+| Criterion | What to look for | Example signals |
+|-----------|-----------------|----------------|
+| Growth Potential | Budget expansion talk, new project discussions, platform upgrades, multi-year planning language | "looking at a Phase 2", "next year's budget", "expanding the retainer" |
+| Strategic Fit | Alignment with Nansen services, mentions of capabilities Nansen offers, discussions of shared goals | "need help with CMS migration", "looking for a partner on AI", "this maps to what you do" |
+| Relationship Quality | Access to decision-makers, warmth/trust language, advocacy, referral mentions, executive involvement | "I'll introduce you to our VP", "you guys are great", "recommended you to..." |
+| Engagement Level | Responsiveness, proactive requests, collaboration depth, meeting frequency signals | "can we set up a weekly?", "sent over the brief already", "looped in the whole team" |
+| Budget & Profitability | Specific budget numbers, value perception, pricing discussion, scope changes, margin-affecting language | "budget is $X", "great ROI", "can we add more hours?", "need to reduce scope" |
+| Innovation Openness | Reaction to new ideas, AI/experimentation appetite, willingness to try new platforms, early-adopter language | "let's pilot that", "interested in the AI approach", "we're open to testing" |
+
+**Add to YAML frontmatter:**
+
+```yaml
+scoring_signals:
+  growth_potential: ["Phase 2 discussion mentioned for Q2", "Client asked about retainer expansion"]
+  strategic_fit: ["CMS 13 upgrade aligns with Nansen Optimizely practice"]
+  relationship_quality: ["Direct access to VP Marketing, positive tone throughout"]
+  engagement_level: []
+  budget_profitability: ["Current retainer at $15k/month, client asked about increasing"]
+  innovation_openness: ["Enthusiastic about AI content recommendations pilot"]
+```
+
+Only include criteria that have genuine signals. Empty arrays are fine -- they tell the scorer "no data here". Each signal should be a short, specific sentence citing what was actually said or observed, not generic summaries.
+
+**Growth Tracker signals to detect:**
+
+Also extract signals relevant to the Growth Tracker operational fields:
+
+```yaml
+growth_tracker_signals:
+  expansion_opportunities: ["CMS 13 migration", "Commerce 15 evaluation", "AI content personalization"]
+  health_indicators: ["positive" | "neutral" | "concerning"]
+  health_notes: "Strong engagement, proactive on new initiatives"
+  relationship_indicators: ["direct-exec-access", "advocacy", "referral"]
+  qbr_mention: false
+  revenue_signals: ["$15k/month retainer", "discussing Phase 2 at $X"]
+```
+
+These signals feed directly into the account-scorer and growth-tracker skills downstream. The more specific and evidence-based they are, the better the scoring quality.
+
+**Important:** Not every source file will contain scoring signals. Internal team discussions, industry research, and technical documents may have none -- that's fine. The signals are most likely to appear in client-facing meeting transcripts and touchbase conversations.
 
 **For HIGH signal sources**: Full extraction. Confidence should reflect the richness of the source.
 
@@ -274,6 +322,30 @@ Keep count of:
 - Intelligence files created
 - Sources that were reclassified to LOW during pre-filter
 - Any extraction errors
+
+### 5e. Update the intelligence index
+
+After all intelligence files have been written, regenerate the `_index.json` file in the intelligence/ folder. This index provides fast metadata lookups without reading every file.
+
+Run the index generator script:
+
+```bash
+python3 /path/to/workspace/nansen-core/tools/build_intelligence_index.py --intelligence-dir /path/to/intelligence/
+```
+
+If the script is not available, you can rebuild the index inline by:
+
+1. Reading every `.intelligence.md` file in the intelligence/ folder
+2. Extracting the YAML frontmatter from each file
+3. Building a JSON entry per file with: `file`, `title`, `date`, `client`, `source_type`, `domains`, `confidence`, `participants`, `summary` (truncated to 200 chars)
+4. Writing `_index.json` with structure: `{ version, generated_at, total_files, stats, entries }`
+
+The index should normalize:
+- Confidence values to "high", "medium", or "low" (numeric values: >=0.85 = high, >=0.6 = medium, else low)
+- Domains and participants to flat arrays of lowercase strings
+- Inline JSON arrays in YAML (e.g. `["item1", "item2"]`) to proper lists
+
+This step should not block the sync if it fails -- log a warning and continue.
 
 ## Step 6 -- Update Sync State
 

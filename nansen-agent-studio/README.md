@@ -6,20 +6,41 @@ Local-first repository for Optimizely Opal agent specs. Designed for reuse acros
 
 ## Folder Structure
 
+Agent Studio splits into two locations: the plugin (architecture, version-controlled) and the working folder (client data, per-user workspace).
+
+**Plugin (nansen-agent-studio):**
+
 ```
-opal-agents/
-├── registry.json                         # Central index of every agent
-├── schema/
-│   └── agent-spec.schema.json            # JSON Schema for validation
-├── templates/
-│   └── agents/
-│       └── _blank-agent.json             # CLEAR-structured starter
-├── clients/
-│   └── <client-slug>/
-│       └── agents/
-│           └── <agent-name>.json         # Client-specific agent specs
-└── Instructions/
-    └── <reference documents>
+schema/
+  agent-spec.schema.json                  # JSON Schema for validation
+templates/
+  agents/
+    _blank-agent.json                     # CLEAR-structured starter
+Instructions/
+  opal-system-tools/                      # Reference docs for Opal tools
+skills/
+  onboarding/                             # Developer onboarding flow
+  opal-agent-builder/                     # Agent spec builder
+commands/
+  setup.md                                # /setup command
+```
+
+**Working folder (nansen-working-agents):**
+
+```
+nansen-working-agents/
+  registry.json                           # Central index of every agent
+  clients/
+    <client-slug>/
+      agents/
+        <agent-name>.json                 # Client-specific agent specs
+      docs/                               # Solution documentation
+      files/                              # Reference files
+      plans/                              # Architecture plans
+  tools/
+    export-for-opal.py                    # Strips _nansen for Opal import
+  exports/
+    <client-slug>/                        # Generated -- do NOT edit directly
 ```
 
 ## Conventions
@@ -74,7 +95,7 @@ Variables use `[[double_bracket]]` syntax matching Opal's template engine.
 
 ### Adding a new client
 
-1. Create `clients/<client-slug>/agents/`
+1. Create `nansen-working-agents/clients/<client-slug>/agents/`
 2. Copy `templates/agents/_blank-agent.json` into the new folder
 3. Fill in agent details, set `_nansen.client` to the client slug
 4. Add an entry to `registry.json`
@@ -100,7 +121,7 @@ Agent specs can be validated against `schema/agent-spec.schema.json` using any J
 
 ```bash
 # Example with ajv-cli
-npx ajv validate -s schema/agent-spec.schema.json -d clients/road-scholar/agents/inventory-builder.json
+npx ajv validate -s schema/agent-spec.schema.json -d nansen-working-agents/clients/road-scholar/agents/inventory-builder.json
 ```
 
 ## Git Workflow

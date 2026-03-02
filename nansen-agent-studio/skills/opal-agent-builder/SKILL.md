@@ -24,33 +24,41 @@ JSON that will import cleanly into Opal and execute correctly on the first try.
 
 ## How This Repo Works
 
-The repo lives at the root of the workspace folder. Start by reading `README.md`
-for the full conventions, but here's what matters most:
+Agent Studio has two parts: the plugin (architecture, bundled with nansen-agent-studio)
+and the working folder (client data, in the user's workspace). Start by reading
+`README.md` for the full conventions, but here's what matters most:
+
+**Plugin (architecture -- ships with nansen-agent-studio):**
 
 ```
-opal-agents/
-├── registry.json                  # Central index of every agent
-├── schema/
-│   └── agent-spec.schema.json     # JSON Schema for validation
-├── templates/
-│   └── agents/
-│       └── _blank-agent.json      # CLEAR-structured starter template
-├── clients/
-│   └── <client-slug>/
-│       ├── agents/                # Agent JSON specs
-│       ├── docs/                  # Solution documentation (per feature request)
-│       ├── files/                 # Reference files (PDFs, CSVs, etc.)
-│       └── plans/                 # Architecture plans (build-phase, optional)
-├── tools/
-│   └── export-for-opal.py        # Strips _nansen, reorders fields for import
-├── exports/
-│   └── <client-slug>/            # Generated — do NOT edit these directly
-└── Instructions/
-    └── opal-system-tools/        # Saved HTML docs for every Opal tool category
+schema/
+  agent-spec.schema.json           # JSON Schema for validation
+templates/
+  agents/
+    _blank-agent.json              # CLEAR-structured starter template
+Instructions/
+  opal-system-tools/               # Saved HTML docs for every Opal tool category
+```
+
+**Working folder (client data -- in the user's workspace):**
+
+```
+nansen-working-agents/
+  registry.json                    # Central index of every agent
+  clients/
+    <client-slug>/
+      agents/                      # Agent JSON specs
+      docs/                        # Solution documentation (per feature request)
+      files/                       # Reference files (PDFs, CSVs, etc.)
+      plans/                       # Architecture plans (build-phase, optional)
+  tools/
+    export-for-opal.py             # Strips _nansen, reorders fields for import
+  exports/
+    <client-slug>/                 # Generated -- do NOT edit these directly
 ```
 
 Files in `clients/` are the source of truth. Files in `exports/` are generated
-artifacts produced by the export script — never hand-edit them.
+artifacts produced by the export script -- never hand-edit them.
 
 ## Two Agent Types — Completely Different Schemas
 

@@ -86,6 +86,66 @@ optional_fields:
     description: Industry vertical slug (lowercase, hyphenated)
     example: "aerospace-manufacturing"
 
+  scoring_signals:
+    type: object
+    description: >
+      Playbook scoring signals extracted from the source material.
+      Maps to the 6 criteria in the Client Portfolio Scorecard.
+      Each key contains an array of specific evidence sentences.
+      Only include criteria with genuine signals; empty arrays are fine.
+    properties:
+      growth_potential:
+        type: array
+        description: Signals about budget expansion, new projects, platform upgrades, multi-year planning
+      strategic_fit:
+        type: array
+        description: Signals about alignment with Nansen services, capability matches, shared goals
+      relationship_quality:
+        type: array
+        description: Signals about exec access, trust, advocacy, referrals, warmth
+      engagement_level:
+        type: array
+        description: Signals about responsiveness, proactive requests, collaboration depth, frequency
+      budget_profitability:
+        type: array
+        description: Signals about budget numbers, value perception, pricing, scope, margins
+      innovation_openness:
+        type: array
+        description: Signals about reaction to new ideas, AI appetite, experimentation, early adoption
+    example:
+      growth_potential: ["Phase 2 discussion mentioned for Q2"]
+      strategic_fit: ["CMS 13 upgrade aligns with Nansen Optimizely practice"]
+      relationship_quality: ["Direct access to VP Marketing"]
+      engagement_level: []
+      budget_profitability: ["Current retainer at $15k/month"]
+      innovation_openness: ["Enthusiastic about AI content pilot"]
+
+  growth_tracker_signals:
+    type: object
+    description: >
+      Operational signals for the Client Growth Tracker spreadsheet.
+      Extracted during sync to feed the growth-tracker population skill.
+    properties:
+      expansion_opportunities:
+        type: array
+        description: Specific upsell/cross-sell opportunities mentioned
+      health_indicators:
+        type: enum
+        values: [positive, neutral, concerning]
+        description: Overall health signal from this source
+      health_notes:
+        type: string
+        description: Brief note explaining the health indicator
+      relationship_indicators:
+        type: array
+        description: Tags like direct-exec-access, advocacy, referral, escalation-risk
+      qbr_mention:
+        type: boolean
+        description: Whether a QBR was mentioned or scheduled
+      revenue_signals:
+        type: array
+        description: Any revenue, budget, or financial figures mentioned
+
 # Filename convention
 # Pattern: YYYY-MM-DD_client-slug_source-type_title-slug.intelligence.md
 # Examples:
