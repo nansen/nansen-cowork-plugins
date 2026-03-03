@@ -1,0 +1,23 @@
+{
+  "skill_name": "weekly-update",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "prep the weekly update for my projects",
+      "expected_output": "Draft updates for Arnold's assigned projects (Teledyne IT, Road Scholar, Symetra based on the doc assignments) with budget numbers from Scoro, carried-forward risks from last week, client temp, and new biz. Output in the exact Google Doc format with emojis.",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "weekly update for Jarrett's projects",
+      "expected_output": "Draft updates for Jarrett's projects (THMA, USPA, AAD, MSC, Road Scholar, Symetra based on doc assignments) with budget from Scoro, risks carried from previous week with NEW/UPDATE labels, client temperature, and new biz opportunities.",
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "can you do a quick weekly status for Road Scholar? I need it for the account planning meeting",
+      "expected_output": "Single-project update for Road Scholar only. Should pull budget from Scoro, reference last week's entries (AI search pitch, Find to Graph), scan Slack for recent activity, and produce the standard format output.",
+      "files": []
+    }
+  ]
+}
